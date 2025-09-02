@@ -166,6 +166,18 @@ def create_post():
 
 
 
+@app.route("/problems/<pid>")
+def problem_detail(pid):
+    # TODO: pid로 DB 조회
+    item = {
+        "id": pid,
+        "title": "구간 합 구하기",
+        "body": "정수 배열이 주어졌을 때, 구간 [l, r]의 합을 빠르게 구ƒ하는 문제입니다.",
+        "created_at": "어제",
+        # "code": "def prefix_sum(arr):\n    ...",
+    }
+    return render_template("problems/problem_detail.html", item=item)
+
 
 if __name__ == "__main__":
     app.run(
