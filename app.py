@@ -1,9 +1,11 @@
 # app.py
 from celery import Celery
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify, render_template, request
 from pymongo import MongoClient
 import os
 from openai import OpenAI
+from datetime import datetime
+import json
 
 app = Flask(__name__)
 
@@ -32,6 +34,8 @@ openai = OpenAI(api_key=get_openai_key())
 # MongoDB
 client = MongoClient(os.environ.get("MONGO_URI"))
 db = client.get_database()
+# Post Table
+posts = db["posts"]
 
 # health check용 API
 @app.get("/")
@@ -81,7 +85,87 @@ def get_chatgpt_test():
 
     return jsonify({"result":response.output_text})
 
-    pass
+def to_json(doc):
+    """Mongo -> JSON-safe (ObjectId/datetime handling)."""
+    if not doc:
+        return None
+    out = dict(doc)
+    if "_id" in out:
+        out["_id"] = str(out["_id"])
+    for k, v in out.items():
+        if isinstance(v, datetime):
+            out[k] = v.isoformat()
+    return out
+    # Optional: add server-side fields
+def add_meta(d):
+    d.setdefault("created_at", datetime.utcnow())
+    d.setdefault("updated_at", datetime.utcnow())
+    return d
+
+
+
+@celery.task
+def get_store_keywords(title_description):
+    # save the data to the mongodb
+    doc = add_meta(title_description)
+
+
+    # call chatgpt API
+    prompt =  """You are an expert algorithm problem analyst.
+    Given a problem Title and Description, extract only the essential keywords required to solve it, and give a crisp Korean explanation for each keyword.
+
+    OUTPUT RULES:
+    - Return STRICTLY valid JSON with these 3 arrays:
+      {
+        "data_structures": [{"keyword": "...", "explanation": "..."}],
+        "algorithms": [{"keyword": "...", "explanation": "..."}],
+        "concepts": [{"keyword": "...", "explanation": "..."}]
+      }
+    - 3~8 items total; avoid duplicates and synonyms.
+    - Explanations must be ≤ 2 sentences, Korean, practical (왜 필요한지/언제 쓰는지).
+
+    Title: {{문제_타이틀}}
+    Description: {{문제_설명}}
+    """
+    response = openai.chat.completions.create(
+        model="gpt-4o-mini",  # or "gpt-4o-mini" if you want cheaper/faster
+        messages=[
+            {"role": "system", "content": "You are an expert algorithm problem analyst."},
+            {"role": "user", "content": prompt}
+        ],
+        response_format={"type": "json_object"}  # ensures valid JSON
+    )
+
+    # print(response.choices[0].message.content)
+    parsed = json.loads(response.choices[0].message.content)
+    doc.setdefault("data_structures",parsed['data_structures'])
+    doc.setdefault("algorithms",parsed['algorithms'])
+    doc.setdefault("concepts",parsed['concepts'])
+    result = posts.insert_one(doc)
+
+    _id = str(result.inserted_id)
+    return _id
+
+# @app.route("/task")
+# def run_chatgpt_keywords():
+#     task = get_store_keywords.delay()  # 비동기 실행
+#     return jsonify({"task_id": task.id})
+
+
+@app.route("/api/posts", methods=['POST'])
+def create_post():
+    data = request.get_json(silent=True)
+    if data is None:
+            return jsonify(error="JSON body required with Content-Type: application/json"), 400
+    print("data===", data)
+
+    # celery
+    task = get_store_keywords.delay(data)
+
+    return jsonify({"task_id": task.id }), 201
+
+
+
 
 if __name__ == "__main__":
     app.run(
