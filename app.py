@@ -1,6 +1,6 @@
 # app.py
 from celery import Celery
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template
 from pymongo import MongoClient
 import os
 from openai import OpenAI
@@ -36,7 +36,7 @@ db = client.get_database()
 # health check용 API
 @app.get("/")
 def index():
-    return "Hello, Flask!"
+    return render_template('hello.html')
 
 @app.get("/db/ping")
 def db_ping():
