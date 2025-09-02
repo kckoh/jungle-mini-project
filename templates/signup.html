@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}회원가입{% endblock %}
+{% block content %}
+  <section class="min-h-[60vh] flex items-center justify-center">
+    <div class="w-full max-w-md space-y-6">
+      <div class="text-center">
+        <h1 class="text-2xl font-bold">회원가입</h1>
+        <p class="text-sm text-gray-500 mt-1">알고리즘이 어려운가요? 저희가 도와줄게요. 함께 성장해요!</p>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="space-y-2">
+            {% for category, message in messages %}
+              <div class="text-sm px-3 py-2 rounded border {% if category == 'error' %}border-red-200 text-red-700 bg-red-50{% else %}border-gray-200 text-gray-700 bg-white{% endif %}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+  <form method="post" class="border border-gray-200 rounded-xl p-6 space-y-5 bg-white">
+        <div class="space-y-4">
+          <div class="space-y-2">
+            <label for="email" class="block text-sm">이메일</label>
+            <input id="email" name="email" type="email" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-black" placeholder="your-email@example.com" />
+          </div>
+          <div class="space-y-2">
+            <label for="password" class="block text-sm">패스워드</label>
+            <input id="password" name="password" type="password" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-black" placeholder="8자 이상 입력하세요" />
+          </div>
+          <div class="space-y-2">
+            <label for="confirm" class="block text-sm">패스워드 확인</label>
+            <input id="confirm" name="confirm" type="password" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-black" placeholder="패스워드를 다시 입력하세요" />
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <button class="w-full bg-black text-white rounded-md py-2 text-sm font-semibold hover:brightness-95 disabled:opacity-50" type="submit">회원가입</button>
+        </div>
+
+        <div class="text-center text-sm">
+          이미 계정이 있으신가요? <a class="underline" href="/login">로그인</a>
+        </div>
+      </form>
+    </div>
+  </section>
+{% endblock %}

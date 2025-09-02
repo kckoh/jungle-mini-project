@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}로그인{% endblock %}
+{% block content %}
+<section class="min-h-[60vh] flex items-center justify-center">
+  <div class="w-full max-w-md space-y-6">
+    <div class="text-center">
+      <h1 class="text-2xl font-bold">로그인</h1>
+      <p class="text-sm text-gray-500 mt-1">계정으로 계속 진행하세요</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="space-y-2">
+          {% for category, message in messages %}
+            <div class="text-sm px-3 py-2 rounded border {% if category == 'error' %}border-red-200 text-red-700 bg-red-50{% else %}border-gray-200 text-gray-700 bg-white{% endif %}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form class="border border-gray-200 rounded-xl p-6 space-y-4 bg-white" method="post" action="/login">
+      <input type="hidden" name="next" value="{{ next or '' }}" />
+      <div class="space-y-2">
+        <label class="block text-sm font-medium" for="email">이메일</label>
+        <input id="email" name="email" type="email" required placeholder="you@example.com" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-black" />
+      </div>
+      <div class="space-y-2">
+        <label class="block text-sm font-medium" for="password">비밀번호</label>
+        <input id="password" name="password" type="password" required placeholder="••••••••" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-black" />
+      </div>
+      <button type="submit" class="w-full rounded-lg bg-black text-white py-2 text-sm font-semibold hover:brightness-95">로그인</button>
+      <div class="text-center text-sm">
+        계정이 없으신가요? <a href="/signup" class="underline">회원가입</a>
+      </div>
+    </form>
+  </div>
+  </section>
+{% endblock %}

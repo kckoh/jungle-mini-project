@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}Jungle{% endblock %}</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='css/favicon.png') }}" />
+  <link rel="shortcut icon" href="{{ url_for('static', filename='css/favicon.png') }}" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ["Noto Sans KR", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"] },
+          colors: { base: { fg: '#111111', muted: '#6b7280' } },
+          boxShadow: { soft: '0 1px 1px rgba(0,0,0,0.03), 0 6px 16px rgba(0,0,0,0.06)' }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="text-base-fg bg-white font-sans">
+  <header class="sticky top-0 bg-white/95 backdrop-blur border-b border-gray-200 z-50">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center gap-4">
+      <div class="flex items-center gap-6 shrink-0">
+        <a href="/" class="inline-flex items-center">
+          <img src="{{ url_for('static', filename='css/favicon.png') }}" alt="ALGO" class="h-10 w-10 md:h-12 md:w-12" />
+          <span class="sr-only">ALGO</span>
+        </a>
+        <p class="hidden md:block text-sm text-gray-500">알고리즘 문제를 연습해보세요</p>
+      </div>
+      <nav class="ml-auto flex items-center gap-1">
+        <a href="/problems/new" class="px-3 py-2 rounded-md hover:bg-gray-100 text-sm">알고리즘 등록</a>
+        <a href="/problems" class="px-3 py-2 rounded-md hover:bg-gray-100 text-sm">알고리즘 챌린지</a>
+        <span class="mx-1 h-5 w-px bg-gray-200 hidden sm:inline-block"></span>
+        {% if session.email %}
+          <span class="px-3 py-2 text-sm text-gray-600 hidden sm:inline">{{ session.email }}</span>
+          <form method="post" action="/logout">
+            <button class="px-3 py-2 rounded-md hover:bg-gray-100 text-sm" type="submit">로그아웃</button>
+          </form>
+        {% else %}
+          <a href="/login" class="px-3 py-2 rounded-md hover:bg-gray-100 text-sm flex items-center gap-2"><span class="text-xs">⎆</span> 로그인</a>
+          <a href="/signup" class="px-3 py-2 rounded-md bg-black text-white text-sm hover:brightness-95">회원가입</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 py-8">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="border-t border-gray-200 py-6 text-center text-sm text-base-muted">
+    © 2025 Krafton Jungle 11 06
+  </footer>
+</body>
+</html>
