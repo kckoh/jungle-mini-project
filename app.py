@@ -3,6 +3,7 @@ from celery import Celery
 from flask import Flask, jsonify
 from pymongo import MongoClient
 import os
+from openai import OpenAI
 
 app = Flask(__name__)
 
@@ -18,6 +19,15 @@ celery = Celery(
 )
 # Flask의 설정값 전체를 Celery config로도 반영
 celery.conf.update(app.config)
+
+def get_openai_key():
+    key_file = os.environ.get("OPENAI_API_KEY_FILE")
+    if key_file and os.path.exists(key_file):
+        with open(key_file) as f:
+            return f.read().strip()
+    return os.environ.get("OPENAI_API_KEY")
+
+openai = OpenAI(api_key=get_openai_key())
 
 # MongoDB
 client = MongoClient(os.environ.get("MONGO_URI"))
@@ -61,6 +71,17 @@ def get_result(task_id):
         # 실패/예외 처리
         return jsonify({"state": task.state, "info": str(task.info)})
 
+@app.route("/test/chatgpt")
+def get_chatgpt_test():
+    response = openai.responses.create(
+        model="gpt-4o",
+        instructions="You are a coding assistant.",
+        input="Hi",
+    )
+
+    return jsonify({"result":response.output_text})
+
+    pass
 
 if __name__ == "__main__":
     app.run(
