@@ -14,3 +14,4 @@ docker compose up -d  --build
 * localhost:5001 -> flask app
 * localhost:8081 -> mongo UI
 * localhost:8081/db/ping -> DB 확인
+* secrets 폴더 생성후 openai_api_key.txt 만들기 & OPENAI 키 복붙
