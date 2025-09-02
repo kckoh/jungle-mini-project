@@ -90,15 +90,7 @@ content %}
 
     function showKeywordValue(el) {
         const display = document.getElementById("keyword-value-display");
-
-        // data-value는 tojson으로 넣었으니 파싱
-        const raw = el.getAttribute("data-value");
-        let value;
-        try {
-            value = JSON.parse(raw);
-        } catch {
-            value = raw;
-        }
+        const value = el.getAttribute("data-value");
 
         // 같은 태그를 다시 누르면 토글(숨김)
         if (currentEl === el) {
@@ -110,6 +102,7 @@ content %}
 
         // 다른 태그를 누르면 값 교체
         if (currentEl) {
+            // 현재 EL 안보이게하기
             currentEl.classList.remove("bg-gray-100", "border-gray-300");
         }
         el.classList.add("bg-gray-100", "border-gray-300");
