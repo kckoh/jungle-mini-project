@@ -57,6 +57,25 @@ content %}
                     class="mt-2 overflow-auto text-xs"
                 ><code>{{ item.code }}</code></pre>
             </section>
+            {% else %}
+            <section class="border border-gray-200 rounded-lg bg-gray-50 p-3">
+                <div class="flex items-center justify-between">
+                    <strong class="text-sm">코드</strong>
+                    <button
+                        type="button"
+                        class="text-xs text-gray-500"
+                        onclick="updateCode()"
+                    >
+                        ✏️ 저장
+                    </button>
+                </div>
+
+                <textarea
+                    id="code-input"
+                    class="mt-2 w-full h-40 rounded-md border border-gray-300 p-2 text-xs font-mono"
+                    placeholder="여기에 코드를 입력하세요..."
+                ></textarea>
+            </section>
             {% endif %}
 
             <!-- AI 피드백 -->
@@ -112,6 +131,26 @@ content %}
             typeof value === "string" ? value : JSON.stringify(value, null, 2);
 
         currentEl = el;
+    }
+    async function updateCode() {
+        const code = document.getElementById("code-input").value;
+        console.log(code);
+        // Replace with your actual resource id
+        const postId = "1";
+
+        const response = await fetch(`/api/posts/${postId}`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ code }),
+        });
+
+        if (response.ok) {
+            alert("코드가 업데이트되었습니다!");
+        } else {
+            alert("업데이트 실패");
+        }
     }
 </script>
 {% endblock %}

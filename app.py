@@ -166,18 +166,28 @@ def create_post():
 
 
 
+# assuming that pid = objectid from the mongodb
 @app.route("/problems/<pid>")
 def problem_detail(pid):
     # TODO: pid로 DB 조회
+    # fake data
     item = {
         "id": pid,
         "title": "구간 합 구하기",
         "body": "정수 배열이 주어졌을 때, 구간 [l, r]의 합을 빠르게 구ƒ하는 문제입니다.",
         "created_at": "어제",
-        "code": "def prefix_sum(arr):\n    ...",
+        # "code": "def prefix_sum(arr):\n    ...",
     }
-    keyword_solution = {"투 포인터": "Hello", "누적 합": "Another hello", "슬라이딩 윈도우": "Sliding ~"}
+    keyword_solution = {"너비 우선 탐색": "그래프나 트리에서 최단 경로를 찾을 때 유용한 탐색 알고리즘으로, 레벨별로 노드를 방문한다.", "이진 탐색": "정렬된 배열에서의 효율적인 검색 방법으로, 매 단계마다 검색 범위를 절반으로 줄인다", "배열": "연속적인 메모리 공간에 저장되는 데이터 구조로, 인덱스를 사용해 빠르게 접근할 수 있다"}
     return render_template("problems/problem_detail.html", item=item, keyword_solution=keyword_solution)
+
+@app.route("/api/posts/<post_id>", methods=['PATCH'])
+def update_post(post_id):
+    data = request.get_json()
+    print("data",data)
+
+    return "hello", 200
+
 
 
 if __name__ == "__main__":
