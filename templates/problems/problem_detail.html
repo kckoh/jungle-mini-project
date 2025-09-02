@@ -26,14 +26,20 @@ content %}
             class="px-4 md:px-6 py-4 border-b border-gray-200 bg-gradient-to-b from-gray-50 to-white"
         >
             <div class="flex flex-wrap items-center gap-2">
-                {% set tags = ['투 포인터','누적 합','슬라이딩 윈도우','이분
-                탐색'] %} {% for k in tags %}
-                <span
+                {% for k,v in keyword_solution.items() %}
+                <button
                     class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full border border-gray-200"
-                    >{{ k }}</span
+                    data-value="{{ v }}"
+                    onclick="showKeywordValue(this)"
                 >
+                    {{ k }}
+                </button>
                 {% endfor %}
             </div>
+            <div
+                id="keyword-value-display"
+                class="mt-2 text-sm text-gray-600"
+            ></div>
         </div>
         <div class="p-4 md:p-6 space-y-6">
             <section class="prose max-w-none">
@@ -78,4 +84,41 @@ content %}
         </div>
     </div>
 </div>
+<script>
+    // 현재 선택된 태그를 기억
+    let currentEl = null;
+
+    function showKeywordValue(el) {
+        const display = document.getElementById("keyword-value-display");
+
+        // data-value는 tojson으로 넣었으니 파싱
+        const raw = el.getAttribute("data-value");
+        let value;
+        try {
+            value = JSON.parse(raw);
+        } catch {
+            value = raw;
+        }
+
+        // 같은 태그를 다시 누르면 토글(숨김)
+        if (currentEl === el) {
+            display.textContent = "";
+            el.classList.remove("bg-gray-100", "border-gray-300");
+            currentEl = null;
+            return;
+        }
+
+        // 다른 태그를 누르면 값 교체
+        if (currentEl) {
+            currentEl.classList.remove("bg-gray-100", "border-gray-300");
+        }
+        el.classList.add("bg-gray-100", "border-gray-300");
+
+        // 문자열/객체 모두 보기 좋게 출력
+        display.textContent =
+            typeof value === "string" ? value : JSON.stringify(value, null, 2);
+
+        currentEl = el;
+    }
+</script>
 {% endblock %}

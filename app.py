@@ -176,7 +176,8 @@ def problem_detail(pid):
         "created_at": "어제",
         "code": "def prefix_sum(arr):\n    ...",
     }
-    return render_template("problems/problem_detail.html", item=item)
+    keyword_solution = {"투 포인터": "Hello", "누적 합": "Another hello", "슬라이딩 윈도우": "Sliding ~"}
+    return render_template("problems/problem_detail.html", item=item, keyword_solution=keyword_solution)
 
 
 if __name__ == "__main__":
