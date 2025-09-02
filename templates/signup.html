@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signup</title>
+    <script src="/static/js/signup.js" defer></script>
+</head>
+
+<body>
+    <h1>Algo 회원가입</h1>
+    <form id="signupForm" action="/api/signup" method="post">
+        <div>이메일</div>
+        <input type="email" id="email" name="email" placeholder="Your email">
+        <div>비밀번호</div>
+        <input type="password" id="password" name="password" placeholder="Your password">
+        <div>비밀번호 재입력</div>
+        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm your password">
+        <button type="submit">회원가입</button>
+    </form>
+    <a href="/login">로그인하기</a>
+</body>
+</html>

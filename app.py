@@ -1,11 +1,22 @@
 # app.py
 from celery import Celery
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify, render_template, request, redirect, url_for, session
+from functools import wraps
 from pymongo import MongoClient
 import os
 from openai import OpenAI
 
 app = Flask(__name__)
+app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')  # 실제 운영에서는 반드시 환경 변수로 관리
+
+# 로그인 체크 데코레이터
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'email' not in session:
+            return redirect(url_for('login_page'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 # Celery 설정
 app.config.update(
@@ -33,10 +44,16 @@ openai = OpenAI(api_key=get_openai_key())
 client = MongoClient(os.environ.get("MONGO_URI"))
 db = client.get_database()
 
-# health check용 API
 @app.get("/")
+@login_required
 def index():
     return render_template('hello.html')
+
+# 예시: 보호된 페이지
+# @app.route('/protected')
+# @login_required
+# def protected_page():
+#     return render_template('protected.html')
 
 @app.get("/db/ping")
 def db_ping():
@@ -45,6 +62,78 @@ def db_ping():
         return jsonify(ok=True)
     except Exception as e:
         return jsonify(ok=False, error=str(e)), 500
+
+# 페이지 라우트
+@app.get("/login")
+def login_page():
+    if 'email' in session:  # 이미 로그인된 사용자는 메인 페이지로
+        return redirect(url_for('index'))
+    return render_template('login.html')
+
+@app.get("/signup")
+def signup_page():
+    if 'email' in session:  # 이미 로그인된 사용자는 메인 페이지로
+        return redirect(url_for('index'))
+    return render_template('signup.html')
+
+@app.get("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for('login_page'))
+
+# API 라우트
+@app.post("/api/login")
+def login():
+    try:
+        data = request.form
+        email = data.get('email')
+        password = data.get('password')
+        
+        app.logger.info(f"Login attempt for email: {email}")
+        
+        user = db.users.find_one({"email": email, "password": password})
+        if user:
+            session['email'] = email
+            app.logger.info(f"Login successful for email: {email}")
+            return redirect(url_for('index'))
+        else:
+            app.logger.warning(f"Login failed for email: {email}")
+            return redirect(url_for('login_page'))
+            
+    except Exception as e:
+        app.logger.error(f"Login error for email {email if 'email' in locals() else 'unknown'}: {str(e)}")
+        return redirect(url_for('login_page'))
+
+@app.post("/api/signup")
+def signup():
+    try:
+        data = request.form
+        email = data.get('email')
+        password = data.get('password')
+        
+        app.logger.info(f"Signup attempt for email: {email}")
+        
+        # 이메일 중복 체크
+        if db.users.find_one({"email": email}):
+            app.logger.warning(f"Signup failed - duplicate email: {email}")
+            return redirect(url_for('signup_page'))
+            
+        # 데이터베이스에 저장
+        db.users.insert_one({
+            "email": email,
+            "password": password  # 실제 운영에서는 반드시 암호화해야 합니다!
+        })
+        
+        # 회원가입 후 바로 로그인 처리
+        session['email'] = email
+        app.logger.info(f"Signup and login successful for email: {email}")
+        return redirect(url_for('index'))
+            
+    except Exception as e:
+        app.logger.error(f"Signup error for email {email if 'email' in locals() else 'unknown'}: {str(e)}")
+        return redirect(url_for('signup_page'))
+    
+
 
 # 간단한 비동기 작업
 @celery.task
