@@ -1,6 +1,6 @@
 # app.py
 from celery import Celery
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template
 from pymongo import MongoClient
 import os
 
@@ -23,10 +23,15 @@ celery.conf.update(app.config)
 client = MongoClient(os.environ.get("MONGO_URI"))
 db = client.get_database()
 
-# health check용 API
+# UI: 메인 페이지
 @app.get("/")
 def index():
-    return "Hello, Flask!"
+    return render_template("index.html")
+
+# health check API
+@app.get("/api/health")
+def health():
+    return jsonify(ok=True)
 
 @app.get("/db/ping")
 def db_ping():

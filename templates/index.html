@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Jungle Mini Project</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+  <header>
+    <h1>Jungle Mini Project</h1>
+    <nav>
+      <a href="/">홈</a>
+      <a href="/api/health" target="_blank">헬스체크</a>
+      <a href="/db/ping" target="_blank">DB 핑</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h2>Flask UI 뼈대</h2>
+      <p>이 페이지는 Flask 템플릿을 사용해 렌더링됩니다.</p>
+      <div class="cards">
+        <div class="card">
+          <h3>비동기 작업</h3>
+          <button id="runTask">/task 실행</button>
+          <div id="taskResult" class="muted">버튼을 눌러 작업을 실행하세요.</div>
+        </div>
+        <div class="card">
+          <h3>Mongo 상태</h3>
+          <button id="pingDb">/db/ping 호출</button>
+          <div id="dbResult" class="muted">DB 핑 결과가 여기에 표시됩니다.</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <small>© 2025 Jungle</small>
+  </footer>
+
+  <script>
+    async function call(url) {
+      const res = await fetch(url);
+      const data = await res.json().catch(() => ({}));
+      return { ok: res.ok, data };
+    }
+
+    document.getElementById('runTask').addEventListener('click', async () => {
+      const { ok, data } = await call('/task');
+      const el = document.getElementById('taskResult');
+      el.textContent = ok ? `Task ID: ${data.task_id}` : '실패';
+    });
+
+    document.getElementById('pingDb').addEventListener('click', async () => {
+      const { ok, data } = await call('/db/ping');
+      const el = document.getElementById('dbResult');
+      el.textContent = ok ? JSON.stringify(data) : '실패';
+    });
+  </script>
+</body>
+</html>
