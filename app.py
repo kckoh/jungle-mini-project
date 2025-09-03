@@ -1,23 +1,15 @@
 # app.py
 from celery import Celery
-from flask import Flask, jsonify, render_template, request, redirect, url_for, session, flash
+from flask import Flask, jsonify, render_template, request, redirect
 from pymongo import MongoClient, ReturnDocument
 import os
 from openai import OpenAI
 from datetime import datetime
 import json
 from bson import ObjectId
-from functools import wraps
-import math
-import requests
-from bs4 import BeautifulSoup
+
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
-
-
-leetcode_session = os.getenv("LEETCODE_SESSION")
-leetcode_csrf = os.getenv("LEETCODE_CSRF")
 
 # Celery 설정
 app.config.update(
@@ -76,7 +68,7 @@ def db_ping():
         return jsonify(ok=False, error=str(e)), 500
 
 
-
+# 리스트 api
 @app.route("/problems")
 @login_required
 def problems():
@@ -111,7 +103,6 @@ def problems():
     ]
     # 서버 측 필터링: 다중 필드 텍스트 검색 + 페이지네이션
     q = (request.args.get("q") or "").strip()
-    # fields: 다중 선택(예: fields=title&fields=body). 이전 호환(field=title)도 지원
     fields = [f.strip() for f in request.args.getlist("fields") if f.strip()]
     legacy_field = (request.args.get("field") or "").strip()
     if legacy_field and legacy_field not in fields:
@@ -168,14 +159,17 @@ def problems():
         pages=pages,
     )
 
-# 추후 수정 (main브랜치 반영)
-@app.route("/problems/new", methods=["GET", "POST"])
-@login_required
-def problem_new():
-    if request.method == "POST":
-        # TODO: DB 저장 후 상세로 이동
-        return redirect(url_for("problems"))
-    return render_template("problems/problem_new.html")
+# 등록 api
+@app.route("/api/posts", methods=['POST'])
+def create_post():
+    data = request.get_json(silent=True)
+    if data is None:
+            return jsonify(error="JSON body required with Content-Type: application/json"), 400
+    # celery
+    task = get_store_keywords.delay(data)
+
+    return jsonify({"task_id": task.id }), 201
+
 
 
 #  ---------------- Auth pages ----------------
@@ -402,19 +396,6 @@ def get_store_aisuggestion(pid, post):
 
     # _id = str(result.inserted_id)
     return "hello"
-
-
-
-@app.route("/api/posts", methods=['POST'])
-def create_post():
-    data = request.get_json(silent=True)
-    if data is None:
-            return jsonify(error="JSON body required with Content-Type: application/json"), 400
-    # celery
-    task = get_store_keywords.delay(data)
-
-    return jsonify({"task_id": task.id }), 201
-
 
 
 # assuming that pid = objectid from the mongodb
