@@ -1,6 +1,8 @@
 # app.py
 from celery import Celery
-from flask import Flask, jsonify, render_template, request, redirect
+
+from flask import Flask, jsonify, render_template, request, redirect, url_for, session
+from functools import wraps
 from pymongo import MongoClient, ReturnDocument
 import os
 from openai import OpenAI
@@ -8,7 +10,18 @@ from datetime import datetime
 import json
 from bson import ObjectId
 
+
 app = Flask(__name__)
+app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')
+
+# 로그인 체크 데코레이터
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'email' not in session:
+            return redirect(url_for('login_page'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 # Celery 설정
 app.config.update(
@@ -35,13 +48,16 @@ openai = OpenAI(api_key=get_openai_key())
 # MongoDB
 client = MongoClient(os.environ.get("MONGO_URI"))
 db = client.get_database()
+
 # Post Table
 posts = db["posts"]
+users = db["users"]
 
-# health check용 API
+# 메인화면
 @app.get("/")
+@login_required
 def index():
-    return render_template('hello.html')
+    return render_template('base.html')
 
 @app.get("/db/ping")
 def db_ping():
@@ -51,18 +67,72 @@ def db_ping():
     except Exception as e:
         return jsonify(ok=False, error=str(e)), 500
 
-# 간단한 비동기 작업
-@celery.task
-def add(x, y):
-    return x + y
+# 로그인 화면으로 전환
+@app.get("/login")
+def login_page():
+    if 'email' in session:
+        return redirect(url_for('index'))
+    return render_template('login.html')
+
+# 회원가입 화면으로 전환
+@app.get("/signup")
+def signup_page():
+    if 'email' in session:
+        return redirect(url_for('index'))
+    return render_template('signup.html')
+
+# 세션 삭제 및 로그아웃 처리
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for('login_page'))
+
+# 로그인 처리(클라이언트에 json을 받아와 json으로 응답 보냄)
+@app.post("/api/login")
+def login():
+    try:
+        data = request.json
+        email = data.get('email')
+        password = data.get('password')
+        
+        user = users.find_one({"email": email, "password": password})
+        if user:
+            session['email'] = email
+            return jsonify({"success": True, "message": "로그인에 성공했습니다."})
+        else:
+            return jsonify({"success": False, "message": "아이디와 비밀번호를 확인해주세요."})
+
+    except Exception as e:
+        return jsonify({"success": False, "message": "로그인 중 오류가 발생했습니다."})
+
+# 회원가입 처리(클라이언트에 json을 받아와 DB에 데이터 입력 후 json으로 응답 보냄)
+@app.post("/api/signup")
+def signup():
+    try:
+        data = request.json
+        email = data.get('email')
+        password = data.get('password')
+
+        
+        if users.find_one({"email": email}):
+            return jsonify({"success": False, "message": "이미 사용 중인 이메일입니다."})
+            
+        users.insert_one({
+            "email": email,
+            "password": password
+        })
+
+        return jsonify({"success": True, "message": "회원가입이 완료되었습니다."})
+
+    except Exception as e:
+        return jsonify({"success": False, "message": "회원가입 중 오류가 발생했습니다."})
+
 
 
 @app.route("/task")
 def run_task():
     task = add.delay(2, 3)  # 비동기 실행
     return jsonify({"task_id": task.id})
-
-
 
 
 @app.route("/result/<task_id>")
@@ -223,6 +293,7 @@ def create_post():
 
 # assuming that pid = objectid from the mongodb
 @app.route("/problems/<pid>")
+@login_required
 def problem_detail(pid):
     try:
         result = posts.find_one({"_id": ObjectId(pid)})
