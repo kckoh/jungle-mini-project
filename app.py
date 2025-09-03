@@ -71,10 +71,6 @@ def create_post():
 
 
 
-#  ---------------- Auth pages ----------------
-# 추후 삭제 예정
-@app.route("/login", methods=["GET", "POST"])
-def login():
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
@@ -90,15 +86,7 @@ def login():
         return redirect(nxt or url_for("index"))
     return render_template("login.html", next=request.args.get("next"))
 
-# 추후 삭제 예정
-@app.post("/logout")
-def logout():
-    session.clear()
-    return redirect(url_for("index"))
 
-# 추후 삭제 예정
-@app.route("/signup", methods=["GET", "POST"])
-def signup():
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
@@ -138,7 +126,6 @@ def signup():
         "문자열", "수학", "그리디", "분할정복", "백트래킹",
     ]
     return render_template("signup.html", algorithm_categories=algorithm_categories)
-#  ---------------- Auth pages ----------------
 
 # 간단한 비동기 작업
 @celery.task
