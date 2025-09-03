@@ -1,7 +1,7 @@
 # app.py
 from celery import Celery
 from flask import Flask, jsonify, render_template, request, redirect
-from pymongo import MongoClient
+from pymongo import MongoClient, ReturnDocument
 import os
 from openai import OpenAI
 from datetime import datetime
@@ -112,21 +112,21 @@ def get_store_keywords(title_description):
 
 
     # call chatgpt API
-    prompt =  """You are an expert algorithm problem analyst.
+    prompt =  f"""You are an expert algorithm problem analyst.
     Given a problem Title and Description, extract only the essential keywords required to solve it, and give a crisp Korean explanation for each keyword.
 
     OUTPUT RULES:
     - Return STRICTLY valid JSON with these 3 arrays:
-      {
+      {{
         "data_structures": [{"keyword": "...", "explanation": "..."}],
         "algorithms": [{"keyword": "...", "explanation": "..."}],
         "concepts": [{"keyword": "...", "explanation": "..."}]
-      }
+      }}
     - 3~8 items total; avoid duplicates and synonyms.
     - Explanations must be ≤ 2 sentences, Korean, practical (왜 필요한지/언제 쓰는지).
 
-    Title: {{문제_타이틀}}
-    Description: {{문제_설명}}
+    Title: {title_description.get("title")}
+    Description: {title_description.get("description")}
     """
     response = openai.chat.completions.create(
         model="gpt-4o-mini",  # or "gpt-4o-mini" if you want cheaper/faster
@@ -148,12 +148,72 @@ def get_store_keywords(title_description):
     return _id
 
 
+
+@celery.task
+def get_store_aisuggestion(pid, post):
+
+    # call chatgpt API
+    prompt = f"""You are an expert algorithm problem analyst and senior code reviewer.
+    ...
+    Rules:
+    - Return STRICT, VALID JSON only (no extra text).
+    - Use this schema:
+    {{
+      "keywords": {{
+        "data_structures": [{{"keyword": "...", "explanation": "..."}}],
+        "algorithms": [{{"keyword": "...", "explanation": "..."}}]
+      }},
+      "code_review": {{
+        "summary": "...",
+        "approach": "...",
+        "time_complexity": "e.g., O(N log N)",
+        "space_complexity": "e.g., O(N)",
+        "edge_cases_missing": ["..."],
+        "test_cases_suggested": ["input/output example ..."],
+        "refactoring_suggestions": ["..."]
+      }},
+      "study_plan": [
+        {{"topic": "...", "why": "...", "what_to_focus": ["...", "..."] }}
+      ],
+      "uncertainties": [
+        {{"item": "...", "reason": "...", "label": "모르겠습니다|추측입니다|확실하지 않음"}}
+      ],
+      "confidence": 0.0
+    }}
+
+    Title: {post.get("title", "")}
+    Description: {post.get("description", "")}
+
+    Code Snippets:
+    {post.get("codeSnippets", "")}
+    ...
+    """
+    response = openai.chat.completions.create(
+        model="gpt-4o-mini",  # or "gpt-4o-mini" if you want cheaper/faster
+        messages=[
+            {"role": "system", "content": "You are an expert algorithm problem analyst and senior code reviewer."},
+            {"role": "user", "content": prompt}
+        ],
+        response_format={"type": "json_object"}  # ensures valid JSON
+    )
+
+    print("response====",response.choices[0].message.content)
+    # parsed = json.loads(response.choices[0].message.content)
+    # doc.setdefault("data_structures",parsed['data_structures'])
+    # doc.setdefault("algorithms",parsed['algorithms'])
+    # doc.setdefault("concepts",parsed['concepts'])
+    # result = posts.insert_one(doc)
+
+    # _id = str(result.inserted_id)
+    return "hello"
+
+
+
 @app.route("/api/posts", methods=['POST'])
 def create_post():
     data = request.get_json(silent=True)
     if data is None:
             return jsonify(error="JSON body required with Content-Type: application/json"), 400
-
     # celery
     task = get_store_keywords.delay(data)
 
@@ -198,22 +258,24 @@ def problem_detail(pid):
 # TODO
 # handle aisuggestion in the frontend
 
-# TODO
-
 @app.route("/api/posts/<pid>", methods=['PATCH'])
 def update_post(pid):
     data = request.get_json()
     print("data=====", data)
     try:
-        result = posts.update_one({"_id": ObjectId(pid)}, {"$set": data})
+        result = posts.find_one_and_update(
+            {"_id": ObjectId(pid)},
+            {"$set": data},
+            return_document=ReturnDocument.AFTER
+        )
     except Exception as e:
         return redirect("/")
 
-    # look for post_id
-    # if it exists
-    # only update the codesnippet
-    # return success or fail
+    # get the post by id
+
     # after then use celery to update the aisuggestion
+    result["_id"] = str(result["_id"])
+    task = get_store_aisuggestion.delay(pid,result)
     return data, 200
 
 
