@@ -26,7 +26,7 @@ def login_required(f):
 
 # TODO
 # problem_new.html -> frontend: javascript fetch API ; backend:
-# problem_list.html -> backend API: GET /api/posts GET /api/search, frontend
+# problems_list.html -> backend API: GET /api/posts GET /api/search, frontend
 # /api/posts (pagination) + /api/search (search)
 # Celery 설정
 app.config.update(
@@ -71,7 +71,7 @@ users = db["users"]
 @app.get("/")
 @login_required
 def index():
-    return render_template('/problems/problems_list.html')
+    return redirect(url_for('problems'))
 
 
 @app.get("/db/ping")
@@ -348,18 +348,14 @@ def problem_detail(pid):
 
     return render_template("problems/problem_detail.html", item=item, keyword_solution=keyword_solution)
 
-
-
-
 @app.route("/problems/new")
 @login_required
 def new_problem():
     return render_template("problems/problem_new.html")
 
-
 @app.route("/problems")
 @login_required
-def problem_list():
+def problems():
     # retrieve the email from the session
     results = list(posts.find({"email": session['email']}))
 
@@ -373,6 +369,7 @@ def problem_list():
         result['created_at'] = result['created_at'].date()
         if tags:
             result['tags'] = tags
+        app.logger.info(f"Problem ID: {result['_id']}")
 
     return render_template("problems/problems_list.html", items=results)
 
