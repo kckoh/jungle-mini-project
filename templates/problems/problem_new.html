@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}새 포스트 작성{% endblock %}
+{% block content %}
+  <div class="max-w-5xl mx-auto px-0">
+    <!-- 본문 카드 -->
+  <form method="post" action="/api/posts" class="border border-gray-200 rounded-xl bg-white overflow-hidden">
+      <!-- 카드 콘텐츠 -->
+      <div class="p-4 md:p-6 space-y-6">
+        <!-- 제목 -->
+        <section class="space-y-2">
+          <label class="text-sm font-medium" for="title">제목</label>
+          <input id="title" name="title" type="text" required placeholder="예: 구간 합 구하기 (BOJ 11659)" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-black" />
+        </section>
+
+        <!-- 내용 -->
+        <section class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="text-sm font-medium" for="content">내용</label>
+          </div>
+          <textarea id="content" name="content" placeholder="내용을 입력해주세요..." class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm min-h-36 outline-black"></textarea>
+          <input type="hidden" id="content_html" name="content_html" />
+        </section>
+        
+        <!-- 저장 버튼 -->
+        <div class="pt-2 text-right">
+          <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-black text-white text-sm font-semibold hover:brightness-95">저장</button>
+        </div>
+      </div>
+      
+    </form>
+  </div>
+
+{% endblock %}
