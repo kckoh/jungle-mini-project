@@ -3,13 +3,13 @@ from celery import Celery
 
 from flask import Flask, jsonify, render_template, request, redirect, url_for, session
 from functools import wraps
-from pymongo import MongoClient, ReturnDocument
+from pymongo import MongoClient, ReturnDocument, ASCENDING, DESCENDING
 import os
 from openai import OpenAI
 from datetime import datetime
 import json
 from bson import ObjectId
-
+import re
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')
@@ -66,6 +66,9 @@ db = client.get_database()
 posts = db["posts"]
 users = db["users"]
 
+# 한 번만 실행
+posts.create_index([("title", ASCENDING)])
+posts.create_index([("description", ASCENDING)])
 
 # 메인화면
 @app.get("/")
@@ -353,26 +356,72 @@ def problem_detail(pid):
 def new_problem():
     return render_template("problems/problem_new.html")
 
+
+
+ALLOWED_FIELDS = {"title", "description"}
+
 @app.route("/problems")
 @login_required
 def problems():
-    # retrieve the email from the session
-    results = list(posts.find({"email": session['email']}))
+    email = (session.get("email") or "").strip().lower()
 
-    for result in results:
+    q = (request.args.get("q") or "").strip()
+    field_mode = request.args.get("field_mode", "title")
+    if field_mode not in ALLOWED_FIELDS:
+        field_mode = "title"
+
+    # 1) 항상 이메일로 스코프
+    query = {"email": email}
+
+    # 2) 선택적 키워드 검색(단일 필드)
+    if q:
+        regex = re.compile(re.escape(q), re.IGNORECASE)
+        query[field_mode] = regex
+    print("queryy",query)
+    # 3) 한 번의 find로 이메일 + 검색 동시 적용
+    cursor = (
+        posts.find(
+            query,
+            {
+                "title": 1,
+                "description": 1,
+                "email": 1,
+                "data_structures.keyword": 1,
+                "algorithms.keyword": 1,
+                "concepts.keyword": 1,
+                "created_at": 1,
+            },
+        )
+        .sort("_id", DESCENDING)
+        .limit(20)
+    )
+    results = list(cursor)
+
+    # 4) processing
+    for doc in results:
+        # created_at 안전 변환
+        if doc.get("created_at"):
+            try:
+                doc["created_at"] = doc["created_at"].date()
+            except Exception:
+                pass  # 타입이 다르면 그대로 둠
         tags = []
-        for key,value in result.items():
-            if key in ['data_structures','algorithms','concepts']:
-                for item in value:
-                    if 'keyword' in item:
-                        tags.append(item['keyword'])
-        result['created_at'] = result['created_at'].date()
+        for path in ("data_structures", "algorithms", "concepts"):
+            for item in doc.get(path, []) or []:
+                kw = item.get("keyword")
+                if kw:
+                    tags.append(kw)
         if tags:
-            result['tags'] = tags
-        app.logger.info(f"Problem ID: {result['_id']}")
+            doc['tags'] = tags
 
-    return render_template("problems/problems_list.html", items=results)
+        app.logger.info(f"Problem ID: {doc['_id']}")
 
+    return render_template(
+        "problems/problems_list.html",
+        items=results,
+        q=q,
+        field_mode=field_mode,
+    )
 
 @app.route("/api/posts/<pid>", methods=['PATCH'])
 def update_post(pid):
