@@ -74,14 +74,14 @@ def db_ping():
 @app.get("/login")
 def login_page():
     if 'email' in session:
-        return redirect(url_for('index'))
+        return redirect(url_for('problems_list'))
     return render_template('login.html')
 
 # 회원가입 화면으로 전환
 @app.get("/signup")
 def signup_page():
     if 'email' in session:
-        return redirect(url_for('index'))
+        return redirect(url_for('problems_list'))
     return render_template('signup.html')
 
 # 세션 삭제 및 로그아웃 처리
@@ -342,6 +342,11 @@ def problem_detail(pid):
 @login_required
 def new_problem():
     return render_template("problems/problem_new.html")
+
+@app.route("/problems/list")
+@login_required
+def problems_list():
+    return render_template("problems/problems_list.html")
 
 # TODO
 # handle aisuggestion in the frontend

@@ -31,21 +31,17 @@
         const passwordInput = document.getElementById('password');
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
         const passwordRegex = /^[a-zA-Z0-9]{6,12}$/;
 
-        // form submit 이벤트 대신 button click 이벤트 사용
         loginButton.addEventListener('click', function () {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
-            // 입력값 검증
             if (!email || !password) {
                 alert('아이디와 비밀번호를 입력해주세요!');
                 return;
             }
 
-            // API 호출
             fetch('/api/login', {
                 method: 'POST',
                 headers: {
@@ -60,7 +56,7 @@
                 .then(data => {
                     if (data.success) {
                         alert('로그인에 성공했습니다.');
-                        window.location.href = '/';
+                        window.location.href = '/problems/list';
                     } else {
                         alert(data.message || '로그인에 실패했습니다.');
                     }
