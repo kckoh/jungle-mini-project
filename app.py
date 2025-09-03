@@ -230,7 +230,7 @@ def get_store_aisuggestion(pid, post):
     1) From the given problem title/description, extract only essential keywords needed to solve it, each with a crisp Korean explanation (≤2 sentences).
     2) Analyze the provided code snippets for approach, complexity, correctness, edge cases, and maintainability.
     3) Propose what to study next (prioritized), with short justifications and concrete topic names.
-
+    4) Analyze the given code snippets and criticize and comment what is good and bad and put those into code_suggestions and make a study plan based on it
     Rules:
     - Return STRICT, VALID JSON only (no extra text).
     - All field values (summary, explanation, why, etc.) **must be written in Korean**.
@@ -243,12 +243,11 @@ def get_store_aisuggestion(pid, post):
         "space_complexity": "예: O(N)",
         "edge_cases_missing": ["..."],
         "test_cases_suggested": ["입력/출력 예시 ..."],
-        "refactoring_suggestions": ["..."]
+        "code_suggestions": ["..."],
       }},
       "study_plan": [
         {{"topic": "...", "why": "...", "what_to_focus": ["...", "..."] }}
-      ],
-      "confidence": 0.0
+      ]
     }}
 
     Title: {post.get("title", "")}
