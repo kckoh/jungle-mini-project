@@ -26,7 +26,7 @@ def login_required(f):
 
 # TODO
 # problem_new.html -> frontend: javascript fetch API ; backend:
-# problem_list.html -> backend API: GET /api/posts GET /api/search, frontend
+# problems_list.html -> backend API: GET /api/posts GET /api/search, frontend
 # /api/posts (pagination) + /api/search (search)
 # Celery 설정
 app.config.update(
@@ -74,7 +74,7 @@ posts.create_index([("description", ASCENDING)])
 @app.get("/")
 @login_required
 def index():
-    return render_template('/problems/problems_list.html')
+    return redirect(url_for('problems'))
 
 
 @app.get("/db/ping")
@@ -351,20 +351,18 @@ def problem_detail(pid):
 
     return render_template("problems/problem_detail.html", item=item, keyword_solution=keyword_solution)
 
-
-
-
 @app.route("/problems/new")
 @login_required
 def new_problem():
     return render_template("problems/problem_new.html")
 
 
+
 ALLOWED_FIELDS = {"title", "description"}
 
 @app.route("/problems")
 @login_required
-def problem_list():
+def problems():
     email = (session.get("email") or "").strip().lower()
 
     q = (request.args.get("q") or "").strip()
@@ -407,7 +405,6 @@ def problem_list():
                 doc["created_at"] = doc["created_at"].date()
             except Exception:
                 pass  # 타입이 다르면 그대로 둠
-
         tags = []
         for path in ("data_structures", "algorithms", "concepts"):
             for item in doc.get(path, []) or []:
@@ -416,6 +413,8 @@ def problem_list():
                     tags.append(kw)
         if tags:
             doc['tags'] = tags
+
+        app.logger.info(f"Problem ID: {doc['_id']}")
 
     return render_template(
         "problems/problems_list.html",
