@@ -50,6 +50,7 @@ client = MongoClient(os.environ.get("MONGO_URI"))
 db = client.get_database()
 # Post Table
 posts = db["posts"]
+users = db["users"]
 
 @app.get("/")
 @login_required
@@ -94,7 +95,7 @@ def login():
         email = data.get('email')
         password = data.get('password')
         
-        user = db.users.find_one({"email": email, "password": password})
+        user = users.find_one({"email": email, "password": password})
         if user:
             session['email'] = email
             return jsonify({"success": True, "message": "로그인에 성공했습니다."})
@@ -112,10 +113,10 @@ def signup():
         password = data.get('password')
 
         
-        if db.users.find_one({"email": email}):
+        if users.find_one({"email": email}):
             return jsonify({"success": False, "message": "이미 사용 중인 이메일입니다."})
             
-        db.users.insert_one({
+        users.insert_one({
             "email": email,
             "password": password
         })
@@ -125,12 +126,6 @@ def signup():
     except Exception as e:
         return jsonify({"success": False, "message": "회원가입 중 오류가 발생했습니다."})
 
-
-
-# 간단한 비동기 작업
-@celery.task
-def add(x, y):
-    return x + y
 
 
 @app.route("/task")
