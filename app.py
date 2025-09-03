@@ -414,6 +414,8 @@ def problem_list():
                 kw = item.get("keyword")
                 if kw:
                     tags.append(kw)
+        if tags:
+            doc['tags'] = tags
 
     return render_template(
         "problems/problems_list.html",
