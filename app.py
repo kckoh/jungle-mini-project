@@ -228,7 +228,7 @@ def get_store_keywords(pid,title_description):
         ],
         response_format={"type": "json_object"}  # ensures valid JSON
     )
-    print("response:", response.choices[0].message.content)
+
     parsed = json.loads(response.choices[0].message.content)
     doc.setdefault("data_structures",parsed['data_structures'])
     doc.setdefault("algorithms",parsed['algorithms'])
