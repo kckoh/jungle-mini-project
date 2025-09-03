@@ -26,15 +26,16 @@ content %}
             class="px-4 md:px-6 py-4 border-b border-gray-200 bg-gradient-to-b from-gray-50 to-white"
         >
             <div class="flex flex-wrap items-center gap-2">
-                <div>{% for k,v in keyword_solution.items() %}
-                <button
-                    class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full border border-gray-200"
-                    data-value="{{ v }}"
-                    onclick="showKeywordValue(this)"
-                >
-                    {{ k }}
-                </button>
-                {% endfor %}
+                <div>
+                    {% for k,v in keyword_solution.items() %}
+                    <button
+                        class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full border border-gray-200"
+                        data-value="{{ v }}"
+                        onclick="showKeywordValue(this)"
+                    >
+                        {{ k }}
+                    </button>
+                    {% endfor %}
                 </div>
             </div>
             <div
@@ -98,88 +99,100 @@ content %}
                 <li>{{ render_value(item) }}</li>
                 {% endfor %}
             </ul>
-            {% else %} {{ val }} {% endif %} {% endmacro %} {% if
-            item.aiSuggestion %}
+            {% else %} {{ val }} {% endif %} {% endmacro %} {# === 여기부터 교체
+            === #} {% set ai = item.aiSuggestion %} {% if ai is string and
+            ai|trim in ["리뷰 중", "리뷰중"] %}
+            <section class="border border-gray-200 rounded-lg p-4 space-y-2">
+                <h3 class="font-semibold">AI 제안</h3>
+                <div
+                    class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-red-100 text-red-700 text-sm font-semibold shadow-sm"
+                >
+                    <svg
+                        class="w-4 h-4 text-red-500"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                    >
+                        <path
+                            fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm-.75-4.75a.75.75 0 001.5 0v-1.5a.75.75 0 00-1.5 0v1.5zM10 7a.75.75 0 01.75.75v2.5a.75.75 0 01-1.5 0v-2.5A.75.75 0 0110 7z"
+                            clip-rule="evenodd"
+                        />
+                    </svg>
+                    리뷰 중
+                </div>
+            </section>
+
+            {% elif ai %}
             <section class="border border-gray-200 rounded-lg p-4 space-y-4">
                 <h3 class="font-semibold">AI 제안</h3>
 
-                {# code_review 블록을 먼저 보기 좋게 고정 섹션으로 #} {% if
-                item.aiSuggestion.code_review %}
+                {# code_review 블록 (객체일 때만) #} {% if ai.code_review %}
                 <div class="space-y-2">
                     <div class="text-gray-800 font-semibold">Code Review</div>
                     <div class="ml-2">
                         <div>
                             <span class="text-gray-600">Summary:</span> {{
-                            item.aiSuggestion.code_review.summary }}
+                            ai.code_review.summary }}
                         </div>
                         <div>
                             <span class="text-gray-600">Approach:</span> {{
-                            item.aiSuggestion.code_review.approach }}
+                            ai.code_review.approach }}
                         </div>
                         <div>
                             <span class="text-gray-600">Time:</span> {{
-                            item.aiSuggestion.code_review.time_complexity }}
+                            ai.code_review.time_complexity }}
                         </div>
                         <div>
                             <span class="text-gray-600">Space:</span> {{
-                            item.aiSuggestion.code_review.space_complexity }}
+                            ai.code_review.space_complexity }}
                         </div>
 
-                        {% if item.aiSuggestion.code_review.edge_cases_missing
-                        %}
+                        {% if ai.code_review.edge_cases_missing %}
                         <div class="mt-2 text-gray-600">Edge Cases Missing</div>
                         <ul class="list-disc pl-5">
-                            {% for ec in
-                            item.aiSuggestion.code_review.edge_cases_missing %}
+                            {% for ec in ai.code_review.edge_cases_missing %}
                             <li>{{ ec }}</li>
                             {% endfor %}
                         </ul>
-                        {% endif %} {% if
-                        item.aiSuggestion.code_review.test_cases_suggested %}
+                        {% endif %} {% if ai.code_review.test_cases_suggested %}
                         <div class="mt-2 text-gray-600">
                             Test Cases Suggested
                         </div>
                         <ul class="list-disc pl-5">
-                            {% for tc in
-                            item.aiSuggestion.code_review.test_cases_suggested
-                            %}
+                            {% for tc in ai.code_review.test_cases_suggested %}
                             <li class="font-mono text-xs">{{ tc }}</li>
                             {% endfor %}
                         </ul>
-                        {% endif %} {% if
-                        item.aiSuggestion.code_review.refactoring_suggestions %}
+                        {% endif %} {% if ai.code_review.refactoring_suggestions
+                        %}
                         <div class="mt-2 text-gray-600">
                             Refactoring Suggestions
                         </div>
                         <ul class="list-disc pl-5">
-                            {% for rf in
-                            item.aiSuggestion.code_review.refactoring_suggestions
+                            {% for rf in ai.code_review.refactoring_suggestions
                             %}
                             <li>{{ rf }}</li>
                             {% endfor %}
                         </ul>
-                        {% endif %} {% if
-                        item.aiSuggestion.code_review.code_suggestions %}
+                        {% endif %} {% if ai.code_review.code_suggestions %}
                         <div class="mt-2 text-gray-600">Code Suggestion</div>
                         <ul class="list-disc pl-5">
-                            {% for suggestion in
-                            item.aiSuggestion.code_review.code_suggestions %}
+                            {% for suggestion in ai.code_review.code_suggestions
+                            %}
                             <li>{{ suggestion }}</li>
                             {% endfor %}
                         </ul>
                         {% endif %}
                     </div>
                 </div>
-                {% endif %} {# study_plan / uncertainties / confidence는 재귀
-                렌더러로 #} {% for key in ["study_plan", "uncertainties",
-                "confidence"] %} {% if item.aiSuggestion[key] is defined %}
+                {% endif %} {# study_plan / uncertainties / confidence 재귀
+                렌더링 #} {% for key in ["study_plan", "uncertainties",
+                "confidence"] %} {% if ai[key] is defined %}
                 <div>
                     <div class="text-gray-800 font-semibold">
                         {{ key|replace("_"," ")|title }}
                     </div>
-                    <div class="ml-2">
-                        {{ render_value(item.aiSuggestion[key]) }}
-                    </div>
+                    <div class="ml-2">{{ render_value(ai[key]) }}</div>
                 </div>
                 {% endif %} {% endfor %}
             </section>
@@ -240,13 +253,12 @@ content %}
         const item = JSON.parse(
             document.getElementById("item-data").textContent,
         );
-        console.log(JSON.stringify({ codeSnippets }));
         const response = await fetch(`/api/posts/${item.id}`, {
             method: "PATCH",
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ codeSnippets }),
+            body: JSON.stringify({ codeSnippets, aiSuggestion: "리뷰 중" }),
         });
 
         if (response.ok) {
