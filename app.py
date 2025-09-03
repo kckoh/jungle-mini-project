@@ -304,7 +304,7 @@ def create_post():
     data = request.get_json(silent=True)
     if data is None:
         return jsonify(error="JSON body required with Content-Type: application/json"), 400
-    
+
     if 'email' not in session:
         return jsonify(error="login required"), 403
 
@@ -401,4 +401,3 @@ if __name__ == "__main__":
         debug=os.environ.get("FLASK_DEBUG", "false").lower() == "true",
         use_reloader=False,
     )
-
