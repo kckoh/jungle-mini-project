@@ -336,6 +336,8 @@ def problem_detail(pid):
 
     return render_template("problems/problem_detail.html", item=item, keyword_solution=keyword_solution)
 
+
+
 @app.route("/problems/new")
 @login_required
 def new_problem():
