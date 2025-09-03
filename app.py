@@ -60,7 +60,7 @@ users = db["users"]
 @app.get("/")
 @login_required
 def index():
-    return render_template('base.html')
+    return render_template('problem_list.html')
 
 @app.get("/db/ping")
 def db_ping():
@@ -301,8 +301,6 @@ def create_post():
     task = get_store_keywords.delay(data)
 
     return jsonify({"task_id": task.id, "success": True}), 201
-
-
 
 # assuming that pid = objectid from the mongodb
 @app.route("/problems/<pid>")
