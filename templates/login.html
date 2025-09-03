@@ -8,14 +8,16 @@
     <form id="loginForm">
         <div class="flex flex-col py-1">
             <label for="email" class="pb-1">이메일</label>
-            <input type="email" class="peer bg-gray-200 w-full pl-3 h-8 rounded-lg invalid:border-red-500 invalid:border invalid:border-solid" id="email" name="email"
-                placeholder="Your email">
+            <input type="email"
+                class="peer bg-gray-200 w-full pl-3 h-8 rounded-lg invalid:border-red-500 invalid:border invalid:border-solid"
+                id="email" name="email" placeholder="Your email">
             <a class="invisible peer-invalid:visible text-red-500 text-sm">올바른 이메일 형식이 아닙니다.</a>
         </div>
         <div class="flex flex-col py-1">
             <label for="password" class="pb-1">비밀번호</label>
-            <input type="password" class="peer bg-gray-200 w-full pl-3 h-8 rounded-lg invalid:border-red-500 invalid:border invalid:border-solid" id="password" name="password"
-                placeholder="Your password">
+            <input type="password"
+                class="peer bg-gray-200 w-full pl-3 h-8 rounded-lg invalid:border-red-500 invalid:border invalid:border-solid"
+                id="password" name="password" placeholder="Your password">
             <a class="invisible peer-invalid:visible text-red-500 text-sm">비밀번호는 영문자와 숫자 조합으로 6~12자여야 합니다.</a>
         </div>
         <button type="button" class="bg-gray-500 text-white w-full rounded-lg my-4 py-2" id="loginButton">로그인</button>
@@ -33,6 +35,14 @@
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
         const passwordRegex = /^[a-zA-Z0-9]{6,12}$/;
+
+
+        document.getElementById('loginForm').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // 기본 폼 제출 막기
+                document.getElementById('loginButton').click(); // 기존 click 이벤트 실행
+            }
+        });
 
         // form submit 이벤트 대신 button click 이벤트 사용
         loginButton.addEventListener('click', function () {
@@ -74,7 +84,7 @@
         const updateLoginButtonState = () => {
             const isEmailValid = emailRegex.test(emailInput.value);
             const isPasswordValid = passwordRegex.test(passwordInput.value);
-            
+
             if (isEmailValid && isPasswordValid) {
                 loginButton.disabled = false;
                 loginButton.classList.remove('bg-gray-500', 'cursor-not-allowed');
