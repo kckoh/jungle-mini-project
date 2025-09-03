@@ -82,27 +82,96 @@ content %}
             </section>
 
             <!-- AI 피드백 -->
-            {% if item.aiSuggestion %}
-            <section class="border border-gray-200 rounded-lg p-4">
-                <h3 class="font-semibold">{{item.aiSuggestion}}</h3>
-                <div class="space-y-4 mt-2 text-sm">
-                    <div>
-                        <div class="text-gray-600 font-medium">
-                            시간/공간 복잡도
+            {% macro render_value(val) %} {% if val is mapping %}
+            <div class="space-y-2">
+                {% for kk, vv in val.items() %}
+                <div>
+                    <div class="text-gray-600 font-medium">{{ kk }}</div>
+                    <div class="ml-3">{{ render_value(vv) }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% elif val is sequence and val is not string %}
+            <ul class="list-disc pl-6 space-y-1">
+                {% for item in val %}
+                <li>{{ render_value(item) }}</li>
+                {% endfor %}
+            </ul>
+            {% else %} {{ val }} {% endif %} {% endmacro %} {% if
+            item.aiSuggestion %}
+            <section class="border border-gray-200 rounded-lg p-4 space-y-4">
+                <h3 class="font-semibold">AI 제안</h3>
+
+                {# code_review 블록을 먼저 보기 좋게 고정 섹션으로 #} {% if
+                item.aiSuggestion.code_review %}
+                <div class="space-y-2">
+                    <div class="text-gray-800 font-semibold">Code Review</div>
+                    <div class="ml-2">
+                        <div>
+                            <span class="text-gray-600">Summary:</span> {{
+                            item.aiSuggestion.code_review.summary }}
                         </div>
-                        <p class="font-mono">O(N log N) / O(N)</p>
-                    </div>
-                    <div>
-                        <div class="text-gray-600 font-medium">
-                            개선 포인트 Top 3
+                        <div>
+                            <span class="text-gray-600">Approach:</span> {{
+                            item.aiSuggestion.code_review.approach }}
                         </div>
-                        <ol class="list-decimal pl-5">
-                            <li>불필요한 정렬 제거</li>
-                            <li>조기 종료 조건 추가</li>
-                            <li>메모리 재사용</li>
-                        </ol>
+                        <div>
+                            <span class="text-gray-600">Time:</span> {{
+                            item.aiSuggestion.code_review.time_complexity }}
+                        </div>
+                        <div>
+                            <span class="text-gray-600">Space:</span> {{
+                            item.aiSuggestion.code_review.space_complexity }}
+                        </div>
+
+                        {% if item.aiSuggestion.code_review.edge_cases_missing
+                        %}
+                        <div class="mt-2 text-gray-600">Edge Cases Missing</div>
+                        <ul class="list-disc pl-5">
+                            {% for ec in
+                            item.aiSuggestion.code_review.edge_cases_missing %}
+                            <li>{{ ec }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %} {% if
+                        item.aiSuggestion.code_review.test_cases_suggested %}
+                        <div class="mt-2 text-gray-600">
+                            Test Cases Suggested
+                        </div>
+                        <ul class="list-disc pl-5">
+                            {% for tc in
+                            item.aiSuggestion.code_review.test_cases_suggested
+                            %}
+                            <li class="font-mono text-xs">{{ tc }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %} {% if
+                        item.aiSuggestion.code_review.refactoring_suggestions %}
+                        <div class="mt-2 text-gray-600">
+                            Refactoring Suggestions
+                        </div>
+                        <ul class="list-disc pl-5">
+                            {% for rf in
+                            item.aiSuggestion.code_review.refactoring_suggestions
+                            %}
+                            <li>{{ rf }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
                     </div>
                 </div>
+                {% endif %} {# study_plan / uncertainties / confidence는 재귀
+                렌더러로 #} {% for key in ["study_plan", "uncertainties",
+                "confidence"] %} {% if item.aiSuggestion[key] is defined %}
+                <div>
+                    <div class="text-gray-800 font-semibold">
+                        {{ key|replace("_"," ")|title }}
+                    </div>
+                    <div class="ml-2">
+                        {{ render_value(item.aiSuggestion[key]) }}
+                    </div>
+                </div>
+                {% endif %} {% endfor %}
             </section>
             {% endif %}
         </div>

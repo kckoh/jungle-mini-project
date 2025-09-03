@@ -23,6 +23,9 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# TODO
+# problem_new.html -> frontend: javascript fetch API ; backend:
+# problem_list.html -> backend API: GET /api/posts GET /api/search, frontend
 # Celery 설정
 app.config.update(
     CELERY_BROKER_URL=os.environ.get("CELERY_BROKER_URL", "redis://redis:6379/0"),
@@ -180,20 +183,19 @@ def get_store_keywords(title_description):
     # save the data to the mongodb
     doc = add_meta(title_description)
 
-
     # call chatgpt API
     prompt =  f"""You are an expert algorithm problem analyst.
     Given a problem Title and Description, extract only the essential keywords required to solve it, and give a crisp Korean explanation for each keyword.
-
     OUTPUT RULES:
     - Return STRICTLY valid JSON with these 3 arrays:
-      {{
-        "data_structures": [{"keyword": "...", "explanation": "..."}],
-        "algorithms": [{"keyword": "...", "explanation": "..."}],
-        "concepts": [{"keyword": "...", "explanation": "..."}]
-      }}
+    {{
+      "data_structures": [{{"keyword": "...", "explanation": "..."}}],
+      "algorithms": [{{"keyword": "...", "explanation": "..."}}],
+      "concepts": [{{"keyword": "...", "explanation": "..."}}]
+    }}
+
     - 3~8 items total; avoid duplicates and synonyms.
-    - Explanations must be ≤ 2 sentences, Korean, practical (왜 필요한지/언제 쓰는지).
+    - Explanations must be ≤ 2 sentences, Korean, practical (왜 필요한지/언제 쓰는지)
 
     Title: {title_description.get("title")}
     Description: {title_description.get("description")}
@@ -207,7 +209,6 @@ def get_store_keywords(title_description):
         response_format={"type": "json_object"}  # ensures valid JSON
     )
 
-    # print(response.choices[0].message.content)
     parsed = json.loads(response.choices[0].message.content)
     doc.setdefault("data_structures",parsed['data_structures'])
     doc.setdefault("algorithms",parsed['algorithms'])
@@ -224,29 +225,28 @@ def get_store_aisuggestion(pid, post):
 
     # call chatgpt API
     prompt = f"""You are an expert algorithm problem analyst and senior code reviewer.
-    ...
+
+    Your tasks:
+    1) From the given problem title/description, extract only essential keywords needed to solve it, each with a crisp Korean explanation (≤2 sentences).
+    2) Analyze the provided code snippets for approach, complexity, correctness, edge cases, and maintainability.
+    3) Propose what to study next (prioritized), with short justifications and concrete topic names.
+
     Rules:
     - Return STRICT, VALID JSON only (no extra text).
+    - All field values (summary, explanation, why, etc.) **must be written in Korean**.
     - Use this schema:
     {{
-      "keywords": {{
-        "data_structures": [{{"keyword": "...", "explanation": "..."}}],
-        "algorithms": [{{"keyword": "...", "explanation": "..."}}]
-      }},
       "code_review": {{
         "summary": "...",
         "approach": "...",
-        "time_complexity": "e.g., O(N log N)",
-        "space_complexity": "e.g., O(N)",
+        "time_complexity": "예: O(N log N)",
+        "space_complexity": "예: O(N)",
         "edge_cases_missing": ["..."],
-        "test_cases_suggested": ["input/output example ..."],
+        "test_cases_suggested": ["입력/출력 예시 ..."],
         "refactoring_suggestions": ["..."]
       }},
       "study_plan": [
         {{"topic": "...", "why": "...", "what_to_focus": ["...", "..."] }}
-      ],
-      "uncertainties": [
-        {{"item": "...", "reason": "...", "label": "모르겠습니다|추측입니다|확실하지 않음"}}
       ],
       "confidence": 0.0
     }}
@@ -256,8 +256,8 @@ def get_store_aisuggestion(pid, post):
 
     Code Snippets:
     {post.get("codeSnippets", "")}
-    ...
     """
+    print("promt===",prompt)
     response = openai.chat.completions.create(
         model="gpt-4o-mini",  # or "gpt-4o-mini" if you want cheaper/faster
         messages=[
@@ -268,12 +268,17 @@ def get_store_aisuggestion(pid, post):
     )
 
     print("response====",response.choices[0].message.content)
-    # parsed = json.loads(response.choices[0].message.content)
+    deserialized = json.loads(response.choices[0].message.content)
+    aisuggestion = {'aiSuggestion': deserialized}
     # doc.setdefault("data_structures",parsed['data_structures'])
     # doc.setdefault("algorithms",parsed['algorithms'])
     # doc.setdefault("concepts",parsed['concepts'])
     # result = posts.insert_one(doc)
-
+    result = posts.find_one_and_update(
+        {"_id": ObjectId(pid)},
+        {"$set": aisuggestion},
+        return_document=ReturnDocument.AFTER
+    )
     # _id = str(result.inserted_id)
     return "hello"
 
@@ -322,9 +327,6 @@ def problem_detail(pid):
     }
 
     return render_template("problems/problem_detail.html", item=item, keyword_solution=keyword_solution)
-
-# TODO
-# need to store aiSuggestion as the key value in the backend
 
 # TODO
 # handle aisuggestion in the frontend
