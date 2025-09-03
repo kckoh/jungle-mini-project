@@ -43,44 +43,47 @@ content %}
         </div>
         <div class="p-4 md:p-6 space-y-6">
             <section class="prose max-w-none">
-                {{ item.body or '알고리즘 내용' }}
+                {{ item.description or '알고리즘 내용' }}
             </section>
 
             <!-- 코드 블록 (있으면) -->
-            {% if item.code %}
-            <section class="border border-gray-200 rounded-lg bg-gray-50 p-3">
-                <div class="flex items-center justify-between">
-                    <strong class="text-sm">등록된 코드</strong>
-                    <a class="text-xs text-gray-500" href="#">✏️ 수정</a>
-                </div>
-                <pre
-                    class="mt-2 overflow-auto text-xs"
-                ><code>{{ item.code }}</code></pre>
-            </section>
-            {% else %}
             <section class="border border-gray-200 rounded-lg bg-gray-50 p-3">
                 <div class="flex items-center justify-between">
                     <strong class="text-sm">코드</strong>
                     <button
                         type="button"
                         class="text-xs text-gray-500"
-                        onclick="updateCode()"
+                        onclick="toggleEdit()"
                     >
-                        ✏️ 저장
+                        ✏️ 수정
                     </button>
                 </div>
 
-                <textarea
-                    id="code-input"
-                    class="mt-2 w-full h-40 rounded-md border border-gray-300 p-2 text-xs font-mono"
-                    placeholder="여기에 코드를 입력하세요..."
-                ></textarea>
+                <!-- 보기 모드 -->
+                <pre id="code-view" class="mt-2 overflow-auto text-xs">
+            <code>{{ item.code }}</code>
+              </pre>
+
+                <!-- 수정 모드 (처음엔 hidden) -->
+                <div id="code-edit" class="hidden">
+                    <textarea
+                        id="code-input"
+                        class="mt-2 w-full h-40 rounded-md border border-gray-300 p-2 text-xs font-mono"
+                    ></textarea>
+                    <button
+                        type="button"
+                        class="text-xs text-blue-600 mt-2"
+                        onclick="updateCode()"
+                    >
+                        💾 저장
+                    </button>
+                </div>
             </section>
-            {% endif %}
 
             <!-- AI 피드백 -->
+            {% if item.aiSuggestion %}
             <section class="border border-gray-200 rounded-lg p-4">
-                <h3 class="font-semibold">AI 피드백</h3>
+                <h3 class="font-semibold">{{item.aiSuggestion}}</h3>
                 <div class="space-y-4 mt-2 text-sm">
                     <div>
                         <div class="text-gray-600 font-medium">
@@ -100,9 +103,14 @@ content %}
                     </div>
                 </div>
             </section>
+            {% endif %}
         </div>
     </div>
 </div>
+<!-- Get the item from the jinja2 as item-data -->
+<script id="item-data" type="application/json">
+    {{ item | tojson }}
+</script>
 <script>
     // 현재 선택된 태그를 기억
     let currentEl = null;
@@ -132,22 +140,38 @@ content %}
 
         currentEl = el;
     }
-    async function updateCode() {
-        const code = document.getElementById("code-input").value;
-        console.log(code);
-        // Replace with your actual resource id
-        const postId = "1";
+    function toggleEdit() {
+        // 현재 코드 가져오기
+        const codeView = document.getElementById("code-view");
+        const codeEdit = document.getElementById("code-edit");
+        const textarea = document.getElementById("code-input");
 
-        const response = await fetch(`/api/posts/${postId}`, {
+        // 코드 내용을 textarea에 복사
+        textarea.value = codeView.innerText.trim();
+
+        // 토글: 보기 숨기고, 수정 보이기
+        codeView.style.display = "none";
+        codeEdit.classList.remove("hidden");
+    }
+
+    async function updateCode() {
+        // don't change the name of the variable!!
+        const codeSnippets = document.getElementById("code-input").value;
+        const item = JSON.parse(
+            document.getElementById("item-data").textContent,
+        );
+        console.log(JSON.stringify({ codeSnippets }));
+        const response = await fetch(`/api/posts/${item.id}`, {
             method: "PATCH",
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ code }),
+            body: JSON.stringify({ codeSnippets }),
         });
 
         if (response.ok) {
             alert("코드가 업데이트되었습니다!");
+            location.reload();
         } else {
             alert("업데이트 실패");
         }

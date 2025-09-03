@@ -1,11 +1,12 @@
 # app.py
 from celery import Celery
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, redirect
 from pymongo import MongoClient
 import os
 from openai import OpenAI
 from datetime import datetime
 import json
+from bson import ObjectId
 
 app = Flask(__name__)
 
@@ -146,18 +147,12 @@ def get_store_keywords(title_description):
     _id = str(result.inserted_id)
     return _id
 
-# @app.route("/task")
-# def run_chatgpt_keywords():
-#     task = get_store_keywords.delay()  # 비동기 실행
-#     return jsonify({"task_id": task.id})
-
 
 @app.route("/api/posts", methods=['POST'])
 def create_post():
     data = request.get_json(silent=True)
     if data is None:
             return jsonify(error="JSON body required with Content-Type: application/json"), 400
-    print("data===", data)
 
     # celery
     task = get_store_keywords.delay(data)
@@ -169,25 +164,57 @@ def create_post():
 # assuming that pid = objectid from the mongodb
 @app.route("/problems/<pid>")
 def problem_detail(pid):
-    # TODO: pid로 DB 조회
+    try:
+        result = posts.find_one({"_id": ObjectId(pid)})
+    except Exception as e:
+        return redirect("/")
+    if not result:
+        return redirect("/")
     # fake data
     item = {
         "id": pid,
-        "title": "구간 합 구하기",
-        "body": "정수 배열이 주어졌을 때, 구간 [l, r]의 합을 빠르게 구ƒ하는 문제입니다.",
-        "created_at": "어제",
+        "title": result["title"],
+        "description": result['description'],
+        "created_at": result['created_at'].date(),
         # "code": "def prefix_sum(arr):\n    ...",
     }
-    keyword_solution = {"너비 우선 탐색": "그래프나 트리에서 최단 경로를 찾을 때 유용한 탐색 알고리즘으로, 레벨별로 노드를 방문한다.", "이진 탐색": "정렬된 배열에서의 효율적인 검색 방법으로, 매 단계마다 검색 범위를 절반으로 줄인다", "배열": "연속적인 메모리 공간에 저장되는 데이터 구조로, 인덱스를 사용해 빠르게 접근할 수 있다"}
+    if 'codeSnippets' in result:
+        item.setdefault('code',result['codeSnippets'] )
+    if 'aiSuggestion' in result:
+        item.setdefault('aiSuggestion', result['aiSuggestion'])
+    # unpack data_structures, algorithms, concepts
+    data = result['data_structures'] + result['algorithms'] + result['concepts']
+
+    keyword_solution = {
+        item["keyword"]: item["explanation"]
+        for item in data
+    }
+
     return render_template("problems/problem_detail.html", item=item, keyword_solution=keyword_solution)
 
-@app.route("/api/posts/<post_id>", methods=['PATCH'])
-def update_post(post_id):
+# TODO
+# need to store aiSuggestion as the key value in the backend
+
+# TODO
+# handle aisuggestion in the frontend
+
+# TODO
+
+@app.route("/api/posts/<pid>", methods=['PATCH'])
+def update_post(pid):
     data = request.get_json()
-    print("data",data)
+    print("data=====", data)
+    try:
+        result = posts.update_one({"_id": ObjectId(pid)}, {"$set": data})
+    except Exception as e:
+        return redirect("/")
 
-    return "hello", 200
-
+    # look for post_id
+    # if it exists
+    # only update the codesnippet
+    # return success or fail
+    # after then use celery to update the aisuggestion
+    return data, 200
 
 
 if __name__ == "__main__":
