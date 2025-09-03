@@ -14,6 +14,7 @@ from bson import ObjectId
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')
 
+
 # 로그인 체크 데코레이터
 def login_required(f):
     @wraps(f)
@@ -31,13 +32,18 @@ app.config.update(
     CELERY_BROKER_URL=os.environ.get("CELERY_BROKER_URL", "redis://redis:6379/0"),
     CELERY_RESULT_BACKEND=os.environ.get("CELERY_RESULT_BACKEND", "redis://redis:6379/0"),
 )
+
+
 celery = Celery(
     app.import_name,
     broker=app.config["CELERY_BROKER_URL"],
     backend=app.config["CELERY_RESULT_BACKEND"],
 )
+
+
 # Flask의 설정값 전체를 Celery config로도 반영
 celery.conf.update(app.config)
+
 
 def get_openai_key():
     key_file = os.environ.get("OPENAI_API_KEY_FILE")
@@ -46,21 +52,26 @@ def get_openai_key():
             return f.read().strip()
     return os.environ.get("OPENAI_API_KEY")
 
+
 openai = OpenAI(api_key=get_openai_key())
+
 
 # MongoDB
 client = MongoClient(os.environ.get("MONGO_URI"))
 db = client.get_database()
 
+
 # Post Table
 posts = db["posts"]
 users = db["users"]
+
 
 # 메인화면
 @app.get("/")
 @login_required
 def index():
     return render_template('base.html')
+
 
 @app.get("/db/ping")
 def db_ping():
@@ -70,12 +81,14 @@ def db_ping():
     except Exception as e:
         return jsonify(ok=False, error=str(e)), 500
 
+
 # 로그인 화면으로 전환
 @app.get("/login")
 def login_page():
     if 'email' in session:
         return redirect(url_for('index'))
     return render_template('login.html')
+
 
 # 회원가입 화면으로 전환
 @app.get("/signup")
@@ -84,11 +97,13 @@ def signup_page():
         return redirect(url_for('index'))
     return render_template('signup.html')
 
+
 # 세션 삭제 및 로그아웃 처리
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect(url_for('login_page'))
+
 
 # 로그인 처리(클라이언트에 json을 받아와 json으로 응답 보냄)
 @app.post("/api/login")
@@ -97,7 +112,7 @@ def login():
         data = request.json
         email = data.get('email')
         password = data.get('password')
-        
+
         user = users.find_one({"email": email, "password": password})
         if user:
             session['email'] = email
@@ -108,6 +123,7 @@ def login():
     except Exception as e:
         return jsonify({"success": False, "message": "로그인 중 오류가 발생했습니다."})
 
+
 # 회원가입 처리(클라이언트에 json을 받아와 DB에 데이터 입력 후 json으로 응답 보냄)
 @app.post("/api/signup")
 def signup():
@@ -116,10 +132,10 @@ def signup():
         email = data.get('email')
         password = data.get('password')
 
-        
+
         if users.find_one({"email": email}):
             return jsonify({"success": False, "message": "이미 사용 중인 이메일입니다."})
-            
+
         users.insert_one({
             "email": email,
             "password": password
@@ -129,7 +145,6 @@ def signup():
 
     except Exception as e:
         return jsonify({"success": False, "message": "회원가입 중 오류가 발생했습니다."})
-
 
 
 @app.route("/task")
@@ -149,6 +164,7 @@ def get_result(task_id):
         # 실패/예외 처리
         return jsonify({"state": task.state, "info": str(task.info)})
 
+
 @app.route("/test/chatgpt")
 def get_chatgpt_test():
     response = openai.responses.create(
@@ -158,6 +174,7 @@ def get_chatgpt_test():
     )
 
     return jsonify({"result":response.output_text})
+
 
 def to_json(doc):
     """Mongo -> JSON-safe (ObjectId/datetime handling)."""
@@ -175,7 +192,6 @@ def add_meta(d):
     d.setdefault("created_at", datetime.utcnow())
     d.setdefault("updated_at", datetime.utcnow())
     return d
-
 
 
 @celery.task
@@ -217,7 +233,6 @@ def get_store_keywords(title_description):
 
     _id = str(result.inserted_id)
     return _id
-
 
 
 @celery.task
@@ -282,7 +297,6 @@ def get_store_aisuggestion(pid, post):
     return "hello"
 
 
-
 @app.route("/api/posts", methods=['POST'])
 def create_post():
     data = request.get_json(silent=True)
@@ -292,7 +306,6 @@ def create_post():
     task = get_store_keywords.delay(data)
 
     return jsonify({"task_id": task.id }), 201
-
 
 
 # assuming that pid = objectid from the mongodb
@@ -327,8 +340,27 @@ def problem_detail(pid):
 
     return render_template("problems/problem_detail.html", item=item, keyword_solution=keyword_solution)
 
-# TODO
-# handle aisuggestion in the frontend
+
+@app.route("/problems")
+@login_required
+def problem_list():
+    # retrieve the email from the session
+    print("session====",session['email'])
+    results = list(posts.find({"email": session['email']}))
+
+    for result in results:
+        tags = []
+        for key,value in result.items():
+            if key in ['data_structures','algorithms','concepts']:
+                for item in value:
+                    if 'keyword' in item:
+                        tags.append(item['keyword'])
+        result['created_at'] = result['created_at'].date()
+        if tags:
+            result['tags'] = tags
+
+    return render_template("problems/problem_list.html", items=results)
+
 
 @app.route("/api/posts/<pid>", methods=['PATCH'])
 def update_post(pid):
