@@ -1,18 +1,5 @@
 # app.py
 from celery import Celery
-<<<<<<< HEAD
-from flask import Flask, jsonify, render_template, request, redirect, url_for, session, flash
-from pymongo import MongoClient
-import math
-from werkzeug.security import check_password_hash, generate_password_hash
-from functools import wraps
-import os
-import re
-import time
-import unicodedata
-import requests
-from bs4 import BeautifulSoup
-=======
 from flask import Flask, jsonify, render_template, request, redirect
 from pymongo import MongoClient, ReturnDocument
 import os
@@ -21,7 +8,6 @@ from datetime import datetime
 import json
 from bson import ObjectId
 
->>>>>>> main
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
 
@@ -54,12 +40,8 @@ openai = OpenAI(api_key=get_openai_key())
 # MongoDB
 client = MongoClient(os.environ.get("MONGO_URI"))
 db = client.get_database()
-<<<<<<< HEAD
-users_col = db.get_collection("users")
-=======
 # Post Table
 posts = db["posts"]
->>>>>>> main
 
 # Auth guard toggle (default: disabled for local dev)
 AUTH_GUARD_ENABLED = os.environ.get("AUTH_GUARD_ENABLED", "false").lower() == "true"
@@ -79,16 +61,7 @@ def login_required(view):
 # UI: 메인 페이지
 @app.get("/")
 def index():
-<<<<<<< HEAD
-    return render_template("index.html")
-
-# health check API
-@app.get("/api/health")
-def health():
-    return jsonify(ok=True)
-=======
     return render_template('hello.html')
->>>>>>> main
 
 @app.get("/db/ping")
 def db_ping():

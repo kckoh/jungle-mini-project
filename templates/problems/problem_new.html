@@ -4,28 +4,6 @@
   <div class="max-w-5xl mx-auto px-0">
     <!-- 본문 카드 -->
   <form method="post" action="/problems/new" class="border border-gray-200 rounded-xl bg-white overflow-hidden">
-      <!-- 카드 헤더 -->
-      <!-- <div class="px-4 md:px-6 py-3 border-b border-gray-200 bg-gradient-to-b from-gray-50 to-white">
-        <div class="grid md:grid-cols-2 gap-3 items-end">
-          <div class="space-y-2">
-            <label class="text-xs font-medium text-gray-600">알고리즘 레퍼런스</label>
-            <div class="flex gap-2 items-center">
-              <div class="flex gap-1">
-                <button type="button" data-platform="leetcode" class="ref-tab px-3 py-1.5 rounded-md border border-gray-200 text-sm hover:bg-black">LeetCode</button>
-                <button type="button" data-platform="boj" class="ref-tab px-3 py-1.5 rounded-md border border-gray-200 text-sm hover:bg-black">Baekjoon</button>
-              </div>
-              <div class="flex-1 flex gap-2">
-                <input id="lc_input" class="hidden flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-black" placeholder="예: Two Sum" />
-                <input id="boj_input" class="hidden flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-black" inputmode="numeric" pattern="\\d*" placeholder="예: 2839 (숫자만)" />
-                <button type="button" id="btnFetch" class="px-3 py-2 rounded-md border border-gray-200 text-sm hover:bg-gray-50">가져오기</button>
-              </div>
-            </div>
-            <p class="text-xs text-gray-500">LeetCode는 제목(예: Two Sum), Baekjoon은 문제 번호(예: 2839)를 입력하세요</p>
-          </div>
-          <div class="hidden md:block text-right text-xs text-gray-500">드래프트는 자동 저장되지 않습니다</div>
-        </div>
-      </div> -->
-
       <!-- 카드 콘텐츠 -->
       <div class="p-4 md:p-6 space-y-6">
         <!-- 제목 -->
@@ -51,78 +29,5 @@
       
     </form>
   </div>
-  <!-- <script>  (function(){
-  
-      const tabs = Array.from(document.querySelectorAll('.ref-tab'));
-      const lc = document.getElementById('lc_input');
-      const boj = document.getElementById('boj_input');
-      const btn = document.getElementById('btnFetch');
-  const title = document.getElementById('title');
-  const content = document.getElementById('content');
-  const contentHtml = document.getElementById('content_html');
-  const btnTogglePreview = document.getElementById('btnTogglePreview');
-  const htmlPreviewWrap = document.getElementById('htmlPreviewWrap');
-  const htmlPreview = document.getElementById('htmlPreview');
-      let platform = 'leetcode';
-      function setPlatform(p){
-        platform = p;
-        tabs.forEach(t=>{
-          const on = t.dataset.platform===platform;
-          t.classList.toggle('bg-black', on);
-          t.classList.toggle('text-white', on);
-          t.classList.toggle('hover:brightness-95', on);
-        });
-        lc.classList.toggle('hidden', platform!=='leetcode');
-        boj.classList.toggle('hidden', platform!=='boj');
-        (platform==='leetcode' ? lc : boj).focus();
-      }
-      tabs.forEach(t=> t.addEventListener('click', ()=> setPlatform(t.dataset.platform)));
-      setPlatform('leetcode');
 
-      async function doFetch(){
-        const q = (platform==='leetcode' ? lc.value : boj.value).trim();
-        if (!q){
-          alert(platform==='leetcode' ? 'LeetCode 제목을 입력하세요 (예: Two Sum)' : 'Baekjoon 번호를 입력하세요 (예: 2839)');
-          return;
-        }
-        btn.disabled = true; const old = btn.textContent; btn.textContent='가져오는 중...';
-        try{
-          const params = new URLSearchParams({ platform, q });
-          const r = await fetch(`/api/fetch-problem?${params.toString()}`);
-          const js = await r.json();
-          const d = js.data || {};
-          if (d.title && !title.value) title.value = d.title;
-          let text = '';
-          // Prefer preserving HTML separately (for preview and later storage)
-          if (platform==='boj'){
-            const html = d.desc_html || d.statement_html || '';
-            if (html){
-              contentHtml.value = html;
-              htmlPreview.innerHTML = html;
-              htmlPreviewWrap.classList.remove('hidden');
-            }
-            text = d.desc_text || d.statement_text || (html ? html.replace(/<[^>]+>/g,'').trim() : '');
-          } else {
-            const html = d.statement_html || '';
-            if (html){
-              contentHtml.value = html;
-              htmlPreview.innerHTML = html;
-              htmlPreviewWrap.classList.remove('hidden');
-            }
-            text = d.statement_text || (html ? html.replace(/<[^>]+>/g,'').trim() : '');
-          }
-          if (text && !content.value) content.value = text;
-          if (js.ok === false && js.error){ console.warn('fetch warning:', js.error); }
-        } catch(err){
-          alert('가져오기 실패: '+ err.message);
-        } finally {
-          btn.disabled = false; btn.textContent = old;
-        }
-      }
-      btn.addEventListener('click', doFetch);
-      btnTogglePreview.addEventListener('click', ()=>{
-        htmlPreviewWrap.classList.toggle('hidden');
-      });
-    })();
-  </script> -->
 {% endblock %}
