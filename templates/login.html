@@ -2,10 +2,14 @@
 {% block title %}Algo 로그인{% endblock %}
 {% block content %}
 
-<div class="border border-solid rounded-lg px-4">
-    <h1 class="py-4 text-4xl text-center">Algo 로그인</h1>
+<section class="min-h-[60vh] flex items-center justify-center">
+  <div class="w-full max-w-md space-y-6">
+    <div class="text-center">
+      <h1 class="text-2xl font-bold">로그인</h1>
+      <p class="text-sm text-gray-500 mt-1">계정으로 계속 진행하세요</p>
+    </div>
 
-    <form id="loginForm">
+    <form class="border border-gray-200 p-4 rounded-lg" id="loginForm">
         <div class="flex flex-col py-1">
             <label for="email" class="pb-1">이메일</label>
             <input type="email"
@@ -23,7 +27,7 @@
         <button type="button" class="bg-gray-500 text-white w-full rounded-lg my-4 py-2" id="loginButton">로그인</button>
     </form>
 
-    <div class="pb-3"><a href="/signup" class="text-center">회원가입하기</a></div>
+    <div class="text-center text-sm"> 계정이 없으신가요? <a href="/signup" class="underline">회원가입하기</a></div>
 </div>
 
 <script>
@@ -33,7 +37,6 @@
         const passwordInput = document.getElementById('password');
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
         const passwordRegex = /^[a-zA-Z0-9]{6,12}$/;
 
 
@@ -49,13 +52,11 @@
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
-            // 입력값 검증
             if (!email || !password) {
                 alert('아이디와 비밀번호를 입력해주세요!');
                 return;
             }
 
-            // API 호출
             fetch('/api/login', {
                 method: 'POST',
                 headers: {
@@ -70,7 +71,7 @@
                 .then(data => {
                     if (data.success) {
                         alert('로그인에 성공했습니다.');
-                        window.location.href = '/';
+                        window.location.href = '/problems';
                     } else {
                         alert(data.message || '로그인에 실패했습니다.');
                     }
@@ -109,5 +110,5 @@
         });
     });
 </script>
-
+</section>
 {% endblock %}

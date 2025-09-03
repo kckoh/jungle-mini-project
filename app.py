@@ -3,16 +3,17 @@ from celery import Celery
 
 from flask import Flask, jsonify, render_template, request, redirect, url_for, session
 from functools import wraps
-from pymongo import MongoClient, ReturnDocument
+from pymongo import MongoClient, ReturnDocument, ASCENDING, DESCENDING
 import os
 from openai import OpenAI
 from datetime import datetime
 import json
 from bson import ObjectId
-
+import re
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')
+
 
 # 로그인 체크 데코레이터
 def login_required(f):
@@ -23,18 +24,27 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# TODO
+# problem_new.html -> frontend: javascript fetch API ; backend:
+# problems_list.html -> backend API: GET /api/posts GET /api/search, frontend
+# /api/posts (pagination) + /api/search (search)
 # Celery 설정
 app.config.update(
     CELERY_BROKER_URL=os.environ.get("CELERY_BROKER_URL", "redis://redis:6379/0"),
     CELERY_RESULT_BACKEND=os.environ.get("CELERY_RESULT_BACKEND", "redis://redis:6379/0"),
 )
+
+
 celery = Celery(
     app.import_name,
     broker=app.config["CELERY_BROKER_URL"],
     backend=app.config["CELERY_RESULT_BACKEND"],
 )
+
+
 # Flask의 설정값 전체를 Celery config로도 반영
 celery.conf.update(app.config)
+
 
 def get_openai_key():
     key_file = os.environ.get("OPENAI_API_KEY_FILE")
@@ -43,21 +53,29 @@ def get_openai_key():
             return f.read().strip()
     return os.environ.get("OPENAI_API_KEY")
 
+
 openai = OpenAI(api_key=get_openai_key())
+
 
 # MongoDB
 client = MongoClient(os.environ.get("MONGO_URI"))
 db = client.get_database()
 
+
 # Post Table
 posts = db["posts"]
 users = db["users"]
+
+# 한 번만 실행
+posts.create_index([("title", ASCENDING)])
+posts.create_index([("description", ASCENDING)])
 
 # 메인화면
 @app.get("/")
 @login_required
 def index():
-    return render_template('base.html')
+    return redirect(url_for('problems'))
+
 
 @app.get("/db/ping")
 def db_ping():
@@ -67,25 +85,29 @@ def db_ping():
     except Exception as e:
         return jsonify(ok=False, error=str(e)), 500
 
+
 # 로그인 화면으로 전환
 @app.get("/login")
 def login_page():
     if 'email' in session:
-        return redirect(url_for('index'))
+        return redirect(url_for('problems_list'))
     return render_template('login.html')
+
 
 # 회원가입 화면으로 전환
 @app.get("/signup")
 def signup_page():
     if 'email' in session:
-        return redirect(url_for('index'))
+        return redirect(url_for('problems_list'))
     return render_template('signup.html')
+
 
 # 세션 삭제 및 로그아웃 처리
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect(url_for('login_page'))
+
 
 # 로그인 처리(클라이언트에 json을 받아와 json으로 응답 보냄)
 @app.post("/api/login")
@@ -94,7 +116,7 @@ def login():
         data = request.json
         email = data.get('email')
         password = data.get('password')
-        
+
         user = users.find_one({"email": email, "password": password})
         if user:
             session['email'] = email
@@ -105,6 +127,7 @@ def login():
     except Exception as e:
         return jsonify({"success": False, "message": "로그인 중 오류가 발생했습니다."})
 
+
 # 회원가입 처리(클라이언트에 json을 받아와 DB에 데이터 입력 후 json으로 응답 보냄)
 @app.post("/api/signup")
 def signup():
@@ -113,10 +136,10 @@ def signup():
         email = data.get('email')
         password = data.get('password')
 
-        
+
         if users.find_one({"email": email}):
             return jsonify({"success": False, "message": "이미 사용 중인 이메일입니다."})
-            
+
         users.insert_one({
             "email": email,
             "password": password
@@ -126,7 +149,6 @@ def signup():
 
     except Exception as e:
         return jsonify({"success": False, "message": "회원가입 중 오류가 발생했습니다."})
-
 
 
 @app.route("/task")
@@ -146,6 +168,7 @@ def get_result(task_id):
         # 실패/예외 처리
         return jsonify({"state": task.state, "info": str(task.info)})
 
+
 @app.route("/test/chatgpt")
 def get_chatgpt_test():
     response = openai.responses.create(
@@ -155,6 +178,7 @@ def get_chatgpt_test():
     )
 
     return jsonify({"result":response.output_text})
+
 
 def to_json(doc):
     """Mongo -> JSON-safe (ObjectId/datetime handling)."""
@@ -174,26 +198,24 @@ def add_meta(d):
     return d
 
 
-
 @celery.task
 def get_store_keywords(title_description):
     # save the data to the mongodb
     doc = add_meta(title_description)
 
-
     # call chatgpt API
     prompt =  f"""You are an expert algorithm problem analyst.
     Given a problem Title and Description, extract only the essential keywords required to solve it, and give a crisp Korean explanation for each keyword.
-
     OUTPUT RULES:
     - Return STRICTLY valid JSON with these 3 arrays:
-      {{
-        "data_structures": [{"keyword": "...", "explanation": "..."}],
-        "algorithms": [{"keyword": "...", "explanation": "..."}],
-        "concepts": [{"keyword": "...", "explanation": "..."}]
-      }}
+    {{
+      "data_structures": [{{"keyword": "...", "explanation": "..."}}],
+      "algorithms": [{{"keyword": "...", "explanation": "..."}}],
+      "concepts": [{{"keyword": "...", "explanation": "..."}}]
+    }}
+
     - 3~8 items total; avoid duplicates and synonyms.
-    - Explanations must be ≤ 2 sentences, Korean, practical (왜 필요한지/언제 쓰는지).
+    - Explanations must be ≤ 2 sentences, Korean, practical (왜 필요한지/언제 쓰는지)
 
     Title: {title_description.get("title")}
     Description: {title_description.get("description")}
@@ -207,16 +229,15 @@ def get_store_keywords(title_description):
         response_format={"type": "json_object"}  # ensures valid JSON
     )
 
-    # print(response.choices[0].message.content)
     parsed = json.loads(response.choices[0].message.content)
     doc.setdefault("data_structures",parsed['data_structures'])
     doc.setdefault("algorithms",parsed['algorithms'])
     doc.setdefault("concepts",parsed['concepts'])
+    doc.setdefault("email",title_description['email'])
     result = posts.insert_one(doc)
 
     _id = str(result.inserted_id)
     return _id
-
 
 
 @celery.task
@@ -224,31 +245,29 @@ def get_store_aisuggestion(pid, post):
 
     # call chatgpt API
     prompt = f"""You are an expert algorithm problem analyst and senior code reviewer.
-    ...
+
+    Your tasks:
+    1) From the given problem title/description, extract only essential keywords needed to solve it, each with a crisp Korean explanation (≤2 sentences).
+    2) Analyze the provided code snippets for approach, complexity, correctness, edge cases, and maintainability.
+    3) Propose what to study next (prioritized), with short justifications and concrete topic names.
+    4) Analyze the given code snippets and criticize and comment what is good and bad and put those into code_suggestions and make a study plan based on it
     Rules:
     - Return STRICT, VALID JSON only (no extra text).
+    - All field values (summary, explanation, why, etc.) **must be written in Korean**.
     - Use this schema:
     {{
-      "keywords": {{
-        "data_structures": [{{"keyword": "...", "explanation": "..."}}],
-        "algorithms": [{{"keyword": "...", "explanation": "..."}}]
-      }},
       "code_review": {{
         "summary": "...",
         "approach": "...",
-        "time_complexity": "e.g., O(N log N)",
-        "space_complexity": "e.g., O(N)",
+        "time_complexity": "예: O(N log N)",
+        "space_complexity": "예: O(N)",
         "edge_cases_missing": ["..."],
-        "test_cases_suggested": ["input/output example ..."],
-        "refactoring_suggestions": ["..."]
+        "test_cases_suggested": ["입력/출력 예시 ..."],
+        "code_suggestions": ["..."],
       }},
       "study_plan": [
         {{"topic": "...", "why": "...", "what_to_focus": ["...", "..."] }}
-      ],
-      "uncertainties": [
-        {{"item": "...", "reason": "...", "label": "모르겠습니다|추측입니다|확실하지 않음"}}
-      ],
-      "confidence": 0.0
+      ]
     }}
 
     Title: {post.get("title", "")}
@@ -256,8 +275,8 @@ def get_store_aisuggestion(pid, post):
 
     Code Snippets:
     {post.get("codeSnippets", "")}
-    ...
     """
+
     response = openai.chat.completions.create(
         model="gpt-4o-mini",  # or "gpt-4o-mini" if you want cheaper/faster
         messages=[
@@ -267,29 +286,38 @@ def get_store_aisuggestion(pid, post):
         response_format={"type": "json_object"}  # ensures valid JSON
     )
 
-    print("response====",response.choices[0].message.content)
-    # parsed = json.loads(response.choices[0].message.content)
+    deserialized = json.loads(response.choices[0].message.content)
+    aisuggestion = {'aiSuggestion': deserialized}
     # doc.setdefault("data_structures",parsed['data_structures'])
     # doc.setdefault("algorithms",parsed['algorithms'])
     # doc.setdefault("concepts",parsed['concepts'])
     # result = posts.insert_one(doc)
-
+    result = posts.find_one_and_update(
+        {"_id": ObjectId(pid)},
+        {"$set": aisuggestion},
+        return_document=ReturnDocument.AFTER
+    )
     # _id = str(result.inserted_id)
     return "hello"
 
 
-
 @app.route("/api/posts", methods=['POST'])
 def create_post():
+    # {"title": "some title" , "description": "주어진 배열에서 구간 합을 구하는 문제"}
     data = request.get_json(silent=True)
     if data is None:
-            return jsonify(error="JSON body required with Content-Type: application/json"), 400
+        return jsonify(error="JSON body required with Content-Type: application/json"), 400
+
+    if 'email' not in session:
+        return jsonify(error="login required"), 403
+
+    data['email'] = session.get('email')
+
+
     # celery
     task = get_store_keywords.delay(data)
 
-    return jsonify({"task_id": task.id }), 201
-
-
+    return jsonify({"task_id": task.id, "success": True}), 201
 
 # assuming that pid = objectid from the mongodb
 @app.route("/problems/<pid>")
@@ -323,16 +351,97 @@ def problem_detail(pid):
 
     return render_template("problems/problem_detail.html", item=item, keyword_solution=keyword_solution)
 
-# TODO
-# need to store aiSuggestion as the key value in the backend
+@app.route("/problems/new")
+@login_required
+def new_problem():
+    return render_template("problems/problem_new.html")
 
-# TODO
-# handle aisuggestion in the frontend
+
+
+ALLOWED_FIELDS = {"title", "description"}
+
+@app.route("/problems")
+@login_required
+def problems():
+    # retrieve the email from the session
+    page = int(request.args.get('page', 1, type=int))
+
+    skipCnt = (page - 1) * 5
+
+    email = (session.get("email") or "").strip().lower()
+
+    q = (request.args.get("q") or "").strip()
+    field_mode = request.args.get("field_mode", "title")
+    if field_mode not in ALLOWED_FIELDS:
+        field_mode = "title"
+
+    # 1) 항상 이메일로 스코프
+    query = {"email": email}
+
+    # 2) 선택적 키워드 검색(단일 필드)
+    if q:
+        regex = re.compile(re.escape(q), re.IGNORECASE)
+        query[field_mode] = regex
+    print("queryy",query)
+    # 3) 한 번의 find로 이메일 + 검색 동시 적용
+    cursor = (
+        posts.find(
+            query,
+            {
+                "title": 1,
+                "description": 1,
+                "email": 1,
+                "data_structures.keyword": 1,
+                "algorithms.keyword": 1,
+                "concepts.keyword": 1,
+                "created_at": 1,
+                "aiSuggestion": 1,
+                "codeSnippets": 1
+            },
+        )
+        .sort("_id", DESCENDING)
+        .skip(skipCnt)
+        .limit(6)
+    )
+    results = list(cursor)
+
+    visible_results = results[:5]
+
+    if len(results) == 6:
+        nextPage = True
+    else:
+        nextPage = False
+    email = (session.get("email") or "").strip().lower()
+
+    # 4) processing
+    for doc in visible_results:
+        # created_at 안전 변환
+        if doc.get("created_at"):
+            try:
+                doc["created_at"] = doc["created_at"].date()
+            except Exception:
+                pass  # 타입이 다르면 그대로 둠
+        tags = []
+        for path in ("data_structures", "algorithms", "concepts"):
+            for item in doc.get(path, []) or []:
+                kw = item.get("keyword")
+                if kw:
+                    tags.append(kw)
+        if tags:
+            doc['tags'] = tags
+
+    return render_template(
+        "problems/problems_list.html",
+        items=visible_results,
+        page=page,
+        nextPage=nextPage,
+        q=q,
+        field_mode=field_mode,
+    )
 
 @app.route("/api/posts/<pid>", methods=['PATCH'])
 def update_post(pid):
     data = request.get_json()
-    print("data=====", data)
     try:
         result = posts.find_one_and_update(
             {"_id": ObjectId(pid)},
