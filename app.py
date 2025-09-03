@@ -357,7 +357,16 @@ def new_problem():
 @login_required
 def problems():
     # retrieve the email from the session
-    results = list(posts.find({"email": session['email']}))
+    page = int(request.args.get('page', 1, type=int))
+
+    skipCnt = (page - 1) * 5
+
+    results = list(posts.find({"email": session['email']}).sort("_id", -1).skip(skipCnt).limit(5))
+
+    if len(results) == 5 and list(posts.find({"email": session['email'], "_id": {"$gt": results[4]["_id"]}}).limit(1)):
+        nextPage = True
+    else:
+        nextPage = False
 
     for result in results:
         tags = []
@@ -369,9 +378,8 @@ def problems():
         result['created_at'] = result['created_at'].date()
         if tags:
             result['tags'] = tags
-        app.logger.info(f"Problem ID: {result['_id']}")
 
-    return render_template("problems/problems_list.html", items=results)
+    return render_template("problems/problems_list.html", items=results, page=page, nextPage=nextPage)
 
 
 @app.route("/api/posts/<pid>", methods=['PATCH'])

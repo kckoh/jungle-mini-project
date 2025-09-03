@@ -68,11 +68,28 @@
               <a href="/problems/{{ p._id }}" class="inline-flex items-center text-xs px-2 py-1 rounded border border-gray-200 hover:bg-gray-50">자세히 보기</a>
             </div>
           </article>
+
+          
         {% endfor %}
       {% else %}
         <div class="border border-dashed rounded-lg p-6 text-center text-gray-500 bg-white">아직 담은 문제가 없어요. <a class="underline" href="/problems/new">새 문제 등록하기 →</a></div>
       {% endif %}
     </div>
+    <!-- 페이지네이션 -->
+  <div class="flex justify-center items-center gap-4 mt-6">
+    {% if page > 1 %}
+      <a href="{{ url_for('problems', page=page-1) }}"
+         class="px-4 py-2 border rounded hover:bg-gray-50">이전</a>
+    {% endif %}
+
+    <span class="text-gray-700">페이지 {{ page }}</span>
+
+    {% if nextPage %}
+      <a href="{{ url_for('problems', page=page+1) }}"
+         class="px-4 py-2 border rounded hover:bg-gray-50">다음</a>
+    {% endif %}
+  </div>
+
   </section>
   {% if pages and pages > 1 %}
   <div class="mt-6 flex items-center justify-center gap-2">
