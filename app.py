@@ -393,7 +393,7 @@ def problems():
     if q:
         regex = re.compile(re.escape(q), re.IGNORECASE)
         query[field_mode] = regex
-    print("queryy",query)
+
     # 3) 한 번의 find로 이메일 + 검색 동시 적용
     cursor = (
         posts.find(
@@ -466,6 +466,8 @@ def update_post(pid):
 
     # after then use celery to update the aisuggestion
     result["_id"] = str(result["_id"])
+
+
     task = get_store_aisuggestion.delay(pid,result)
     return data, 200
 
