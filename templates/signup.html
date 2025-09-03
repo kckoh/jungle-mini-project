@@ -52,9 +52,6 @@
                 // 입력값 검증
                 if (!emailInput.value || !passwordInput.value || !confirmPasswordInput.value) {
                     alert('모든 필드를 입력해주세요!');
-                    console.log('이메일:', emailInput.value);
-                    console.log('비밀번호:', passwordInput.value);
-                    console.log('비밀번호 확인:', confirmPasswordInput.value);
                     return;
                 }
 
@@ -86,7 +83,6 @@
                     })
                     .catch(error => {
                         alert('서버 오류가 발생했습니다.');
-                        console.error('Error:', error);
                     });
             });
 

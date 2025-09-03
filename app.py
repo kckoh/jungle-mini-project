@@ -89,19 +89,14 @@ def login():
         email = data.get('email')
         password = data.get('password')
         
-        app.logger.info(f"Login attempt for email: {email}")
-        
         user = db.users.find_one({"email": email, "password": password})
         if user:
             session['email'] = email
-            app.logger.info(f"Login successful for email: {email}")
             return jsonify({"success": True, "message": "로그인에 성공했습니다."})
         else:
-            app.logger.warning(f"Login failed for email: {email}")
             return jsonify({"success": False, "message": "아이디와 비밀번호를 확인해주세요."})
 
     except Exception as e:
-        app.logger.error(f"Login error for email {email if 'email' in locals() else 'unknown'}: {str(e)}")
         return jsonify({"success": False, "message": "로그인 중 오류가 발생했습니다."})
 
 @app.post("/api/signup")
@@ -110,11 +105,9 @@ def signup():
         data = request.json
         email = data.get('email')
         password = data.get('password')
-        
-        app.logger.info(f"Signup attempt for email: {email}")
+
         
         if db.users.find_one({"email": email}):
-            app.logger.warning(f"Signup failed - duplicate email: {email}")
             return jsonify({"success": False, "message": "이미 사용 중인 이메일입니다."})
             
         db.users.insert_one({
@@ -125,7 +118,6 @@ def signup():
         return jsonify({"success": True, "message": "회원가입이 완료되었습니다."})
 
     except Exception as e:
-        app.logger.error(f"Signup error for email {email if 'email' in locals() else 'unknown'}: {str(e)}")
         return jsonify({"success": False, "message": "회원가입 중 오류가 발생했습니다."})
 
 
@@ -247,12 +239,13 @@ def create_post():
 
 
 @app.route("/problems/<pid>")
+@login_required
 def problem_detail(pid):
     # TODO: pid로 DB 조회
     item = {
         "id": pid,
         "title": "구간 합 구하기",
-        "body": "정수 배열이 주어졌을 때, 구간 [l, r]의 합을 빠르게 구ƒ하는 문제입니다.",
+        "body": "정수 배열이 주어졌을 때, 구간 [l, r]의 합을 빠르게 구하는 문제입니다.",
         "created_at": "어제",
         # "code": "def prefix_sum(arr):\n    ...",
     }
