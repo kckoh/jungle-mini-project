@@ -1,0 +1,11 @@
+services:
+  web:
+    environment:
+      FLASK_APP: app.py
+      FLASK_ENV: development
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-dummy}
+    secrets: []   # 시크릿 비활성화
+  celery:
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-dummy}
+    secrets: []   # 시크릿 비활성화

@@ -1,12 +1,16 @@
 # app.py
 from celery import Celery
-from flask import Flask, jsonify, render_template, request, redirect
+from flask import Flask, jsonify, render_template, request, redirect, url_for, session, flash
 from pymongo import MongoClient, ReturnDocument
 import os
 from openai import OpenAI
 from datetime import datetime
 import json
 from bson import ObjectId
+from functools import wraps
+import math
+import requests
+from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key")
@@ -61,7 +65,7 @@ def login_required(view):
 # UI: 메인 페이지
 @app.get("/")
 def index():
-    return render_template('hello.html')
+    return render_template('index.html')
 
 @app.get("/db/ping")
 def db_ping():
