@@ -39,21 +39,6 @@ db = client.get_database()
 # Post Table
 posts = db["posts"]
 
-# Auth guard toggle (default: disabled for local dev)
-AUTH_GUARD_ENABLED = os.environ.get("AUTH_GUARD_ENABLED", "false").lower() == "true"
-
-# D : 로그인, 회원가입 브랜치 머지하면 삭제
-def login_required(view):
-    @wraps(view)
-    def wrapped(*args, **kwargs):
-        if not AUTH_GUARD_ENABLED:
-            return view(*args, **kwargs)
-        if not session.get("user_id"):
-            nxt = request.path
-            return redirect(url_for("login", next=nxt))
-        return view(*args, **kwargs)
-    return wrapped
-
 # UI: 메인 페이지
 @app.get("/")
 def index():
@@ -70,94 +55,8 @@ def db_ping():
 
 # 리스트 api
 @app.route("/problems")
-@login_required
 def problems():
-    # TODO: 실제 DB 연동 후 목록 가져오기 (데모 데이터)
-    items_all = [
-        {
-            "id": 1,
-            "title": "구간 합 구하기",
-            "body": "누적 합으로 구간 합을 효율적으로...",
-            "created_at": "방금 전",
-            "created_ts": 3,
-            "tags": ["prefix-sum", "array"],
-            "code": "def prefix_sum(arr):\n    ...",
-        },
-        {
-            "id": 2,
-            "title": "두 수의 합",
-            "body": "해시를 사용하여 O(N)으로 탐색...",
-            "created_at": "1시간 전",
-            "created_ts": 2,
-            "tags": ["hash", "two-pointer"],
-        },
-        {
-            "id": 3,
-            "title": "배낭 문제",
-            "body": "DP로 0/1 Knapsack을 해결...",
-            "created_at": "어제",
-            "created_ts": 1,
-            "tags": ["dp", "bf"],
-            "code": "// knapsack implementation",
-        },
-    ]
-    # 서버 측 필터링: 다중 필드 텍스트 검색 + 페이지네이션
-    q = (request.args.get("q") or "").strip()
-    fields = [f.strip() for f in request.args.getlist("fields") if f.strip()]
-    legacy_field = (request.args.get("field") or "").strip()
-    if legacy_field and legacy_field not in fields:
-        fields.append(legacy_field)
-    # 'all'이 들어오면 전체 필드로 간주
-    if not fields or (len(fields) == 1 and fields[0] == "all"):
-        fields = ["title", "body", "tag"]
-
-    def contains(hay, needle):
-        try:
-            return needle.lower() in str(hay or "").lower()
-        except Exception:
-            return False
-
-    items = list(items_all)
-    if q:
-        def match_keywords(it):
-            checks = []
-            if "title" in fields:
-                checks.append(contains(it.get("title"), q))
-            if "body" in fields:
-                checks.append(contains(it.get("body"), q))
-            if "tag" in fields:
-                checks.append(any(contains(t, q) for t in (it.get("tags") or [])))
-            return any(checks)
-
-        items = [it for it in items if match_keywords(it)]
-
-    # 페이지네이션만 유지
-    try:
-        page = max(1, int(request.args.get("page", 1)))
-    except ValueError:
-        page = 1
-    try:
-        size = int(request.args.get("size", 5))
-    except ValueError:
-        size = 5
-    size = min(max(1, size), 50)
-    total = len(items)
-    pages = max(1, math.ceil(total / size))
-    page = min(page, pages)
-    start = (page - 1) * size
-    end = start + size
-    page_items = items[start:end]
-
-    return render_template(
-        "problems/problems_list.html",
-        items=page_items,
-        q=q,
-        fields=fields,
-        page=page,
-        size=size,
-        total=total,
-        pages=pages,
-    )
+  return render_template('problems/problems.html')
 
 # 등록 api
 @app.route("/api/posts", methods=['POST'])
