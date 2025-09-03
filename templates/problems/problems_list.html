@@ -13,7 +13,7 @@
         <div class="flex-1 min-w-[260px] flex items-center gap-2">
             <!-- 검색창 -->
           <input name="q" value="{{ q or '' }}" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-black" placeholder="검색어를 입력하세요" />
-          <button type="submit" class="h-10 w-10 inline-flex items-center justify-center rounded-md border border-gray-200 hover:bg-gray-50" aria-label="검색">
+          <button type="submit" onclick="document.querySelector('[name=page]').value=1" class="h-10 w-10 inline-flex items-center justify-center rounded-md border border-gray-200 hover:bg-gray-50" aria-label="검색">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-5 w-5 text-gray-700"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 3.473 9.8l3.613 3.614a.75.75 0 1 0 1.06-1.06l-3.614-3.614A5.5 5.5 0 0 0 9 3.5Zm-4 5.5a4 4 0 1 1 8 0 4 4 0 0 1-8 0Z" clip-rule="evenodd"/></svg>
           </button>
           <a href="/problems" class="h-10 w-10 inline-flex items-center justify-center rounded-md border border-gray-200 hover:bg-gray-50" aria-label="초기화">
@@ -59,11 +59,29 @@
               <a href="/problems/{{ p._id }}" class="inline-flex items-center text-xs px-2 py-1 rounded border border-gray-200 hover:bg-gray-50">자세히 보기</a>
             </div>
           </article>
+
+          
         {% endfor %}
       {% else %}
         <div class="border border-dashed rounded-lg p-6 text-center text-gray-500 bg-white">아직 담은 문제가 없어요. <a class="underline" href="/problems/new">새 문제 등록하기 →</a></div>
       {% endif %}
     </div>
+    <!-- 페이지네이션 -->
+  <div class="flex justify-center items-center gap-4 mt-6">
+  {% if page > 1 %}
+    <a href="{{ url_for('problems', page=page-1, q=q, field_mode=field_mode) }}"
+       class="px-4 py-2 border rounded hover:bg-gray-50">이전</a>
+  {% endif %}
+
+  <span class="text-gray-700">페이지 {{ page }}</span>
+
+  {% if nextPage %}
+    <a href="{{ url_for('problems', page=page+1, q=q, field_mode=field_mode) }}"
+       class="px-4 py-2 border rounded hover:bg-gray-50">다음</a>
+  {% endif %}
+</div>
+
+
   </section>
   {% if pages and pages > 1 %}
   <div class="mt-6 flex items-center justify-center gap-2">

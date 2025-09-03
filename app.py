@@ -363,6 +363,11 @@ ALLOWED_FIELDS = {"title", "description"}
 @app.route("/problems")
 @login_required
 def problems():
+    # retrieve the email from the session
+    page = int(request.args.get('page', 1, type=int))
+
+    skipCnt = (page - 1) * 5
+
     email = (session.get("email") or "").strip().lower()
 
     q = (request.args.get("q") or "").strip()
@@ -395,12 +400,21 @@ def problems():
             },
         )
         .sort("_id", DESCENDING)
-        .limit(20)
+        .skip(skipCnt)
+        .limit(6)
     )
     results = list(cursor)
 
+    visible_results = results[:5]
+
+    if len(results) == 6:
+        nextPage = True
+    else:
+        nextPage = False
+    email = (session.get("email") or "").strip().lower()
+
     # 4) processing
-    for doc in results:
+    for doc in visible_results:
         # created_at 안전 변환
         if doc.get("created_at"):
             try:
@@ -416,11 +430,11 @@ def problems():
         if tags:
             doc['tags'] = tags
 
-        app.logger.info(f"Problem ID: {doc['_id']}")
-
     return render_template(
         "problems/problems_list.html",
-        items=results,
+        items=visible_results,
+        page=page,
+        nextPage=nextPage,
         q=q,
         field_mode=field_mode,
     )
