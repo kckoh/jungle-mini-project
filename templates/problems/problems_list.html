@@ -7,11 +7,10 @@
       <form id="searchForm" class="flex flex-wrap items-center gap-3" method="get" action="/problems">
         {% set f = (fields or []) %}
         {% set is_all = (f|length == 0) or (('title' in f) and ('body' in f) and ('ref' in f) and ('tag' in f)) %}
-        <select id="field_mode" class="border border-gray-200 rounded-lg px-2 py-2 text-sm outline-black bg-white" aria-label="검색 필드 선택">
+  <select id="field_mode" class="border border-gray-200 rounded-lg px-2 py-2 text-sm outline-black bg-white" aria-label="검색 필드 선택">
           <option value="all" {% if is_all %}selected{% endif %}>전체</option>
           <option value="title" {% if f|length==1 and ('title' in f) %}selected{% endif %}>제목</option>
           <option value="body" {% if f|length==1 and ('body' in f) %}selected{% endif %}>내용</option>
-          <option value="ref" {% if f|length==1 and ('ref' in f) %}selected{% endif %}>레퍼런스</option>
           <option value="tag" {% if f|length==1 and ('tag' in f) %}selected{% endif %}>태그</option>
         </select>
         <div class="flex-1 min-w-[260px] flex items-center gap-2">
@@ -37,7 +36,7 @@
               const i = document.createElement('input');
               i.type='hidden'; i.name='fields'; i.value=val; form.appendChild(i);
             };
-            if (v==='all') { ['title','body','ref','tag'].forEach(push); }
+            if (v==='all') { ['title','body','tag'].forEach(push); }
             else { push(v); }
           }
           form.addEventListener('submit', syncFields);
@@ -54,9 +53,7 @@
               <h2 class="font-medium truncate">{{ p.title }}</h2>
               <span class="text-xs text-gray-500 shrink-0">{{ p.created_at or '방금 전' }}</span>
             </div>
-            {% if p.problem_ref %}
-              <div class="text-xs text-gray-500 mt-1">{{ p.problem_ref }}</div>
-            {% endif %}
+            
             {% if p.tags %}
               <div class="mt-2 flex flex-wrap gap-1">
                 {% for tag in p.tags %}

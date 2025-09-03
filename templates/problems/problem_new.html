@@ -5,7 +5,7 @@
     <!-- 본문 카드 -->
   <form method="post" action="/problems/new" class="border border-gray-200 rounded-xl bg-white overflow-hidden">
       <!-- 카드 헤더 -->
-      <div class="px-4 md:px-6 py-3 border-b border-gray-200 bg-gradient-to-b from-gray-50 to-white">
+      <!-- <div class="px-4 md:px-6 py-3 border-b border-gray-200 bg-gradient-to-b from-gray-50 to-white">
         <div class="grid md:grid-cols-2 gap-3 items-end">
           <div class="space-y-2">
             <label class="text-xs font-medium text-gray-600">알고리즘 레퍼런스</label>
@@ -24,7 +24,7 @@
           </div>
           <div class="hidden md:block text-right text-xs text-gray-500">드래프트는 자동 저장되지 않습니다</div>
         </div>
-      </div>
+      </div> -->
 
       <!-- 카드 콘텐츠 -->
       <div class="p-4 md:p-6 space-y-6">
@@ -38,14 +38,9 @@
         <section class="space-y-2">
           <div class="flex items-center justify-between">
             <label class="text-sm font-medium" for="content">내용</label>
-            <button type="button" id="btnTogglePreview" class="text-xs text-gray-500 underline">원문 미리보기</button>
           </div>
           <textarea id="content" name="content" placeholder="내용을 입력해주세요..." class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm min-h-36 outline-black"></textarea>
           <input type="hidden" id="content_html" name="content_html" />
-          <div id="htmlPreviewWrap" class="hidden mt-2">
-            <div class="text-xs text-gray-500 mb-1">원문 미리보기 (이미지 포함)</div>
-            <div id="htmlPreview" class="border border-gray-200 rounded-lg p-3 overflow-x-auto"></div>
-          </div>
         </section>
         
         <!-- 저장 버튼 -->
@@ -56,8 +51,8 @@
       
     </form>
   </div>
-  <script>
-    (function(){
+  <!-- <script>  (function(){
+  
       const tabs = Array.from(document.querySelectorAll('.ref-tab'));
       const lc = document.getElementById('lc_input');
       const boj = document.getElementById('boj_input');
@@ -129,5 +124,5 @@
         htmlPreviewWrap.classList.toggle('hidden');
       });
     })();
-  </script>
+  </script> -->
 {% endblock %}
