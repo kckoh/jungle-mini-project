@@ -137,7 +137,6 @@ def get_store_keywords(title_description):
         response_format={"type": "json_object"}  # ensures valid JSON
     )
 
-    # print(response.choices[0].message.content)
     parsed = json.loads(response.choices[0].message.content)
     doc.setdefault("data_structures",parsed['data_structures'])
     doc.setdefault("algorithms",parsed['algorithms'])
@@ -159,10 +158,6 @@ def get_store_aisuggestion(pid, post):
     - Return STRICT, VALID JSON only (no extra text).
     - Use this schema:
     {{
-      "keywords": {{
-        "data_structures": [{{"keyword": "...", "explanation": "..."}}],
-        "algorithms": [{{"keyword": "...", "explanation": "..."}}]
-      }},
       "code_review": {{
         "summary": "...",
         "approach": "...",
@@ -198,12 +193,17 @@ def get_store_aisuggestion(pid, post):
     )
 
     print("response====",response.choices[0].message.content)
-    # parsed = json.loads(response.choices[0].message.content)
+    deserialized = json.loads(response.choices[0].message.content)
+    aisuggestion = {'aiSuggestion': deserialized}
     # doc.setdefault("data_structures",parsed['data_structures'])
     # doc.setdefault("algorithms",parsed['algorithms'])
     # doc.setdefault("concepts",parsed['concepts'])
     # result = posts.insert_one(doc)
-
+    result = posts.find_one_and_update(
+        {"_id": ObjectId(pid)},
+        {"$set": aisuggestion},
+        return_document=ReturnDocument.AFTER
+    )
     # _id = str(result.inserted_id)
     return "hello"
 
@@ -251,9 +251,6 @@ def problem_detail(pid):
     }
 
     return render_template("problems/problem_detail.html", item=item, keyword_solution=keyword_solution)
-
-# TODO
-# need to store aiSuggestion as the key value in the backend
 
 # TODO
 # handle aisuggestion in the frontend
