@@ -1,20 +1,28 @@
-{% extends 'base.html' %}
-{% block title %}알고리즘 상세{% endblock %}
-{% block content %}
-  <div class="max-w-3xl mx-auto px-4 md:px-6">
+{% extends 'base.html' %} {% block title %}알고리즘 상세{% endblock %} {% block
+content %}
+<div class="max-w-3xl mx-auto px-4 md:px-6">
     <!-- 상단 헤더 -->
     <div class="pt-2 pb-4 md:pt-4 md:pb-6">
-      <div class="flex items-start justify-between gap-3">
-        <div>
-          <h1 class="text-xl md:text-2xl font-bold tracking-tight">{{ item.title or '알고리즘 제목' }}</h1>
-          <p class="text-xs text-gray-500 mt-1">{{ item.created_at or '방금 전' }}</p>
+        <div class="flex items-start justify-between gap-3">
+            <div>
+                <h1 class="text-xl md:text-2xl font-bold tracking-tight">
+                    {{ item.title or '알고리즘 제목' }}
+                </h1>
+                <p class="text-xs text-gray-500 mt-1">
+                    {{ item.created_at or '방금 전' }}
+                </p>
+            </div>
+            <a
+                href="/problems"
+                class="hidden md:inline-flex items-center gap-2 px-3 py-2 rounded-md border border-gray-200 text-sm hover:bg-gray-50"
+                >목록</a
+            >
         </div>
-        <a href="/problems" class="hidden md:inline-flex items-center gap-2 px-3 py-2 rounded-md border border-gray-200 text-sm hover:bg-gray-50">목록</a>
-      </div>
     </div>
 
     <!-- 본문 카드 -->
     <div class="border border-gray-200 rounded-xl bg-white overflow-hidden">
+<<<<<<< HEAD
       <div class="px-4 md:px-6 py-4 border-b border-gray-200 bg-gradient-to-b from-gray-50 to-white">
         <div class="flex flex-wrap items-center gap-2">
           {% set tags = ['투 포인터','누적 합','슬라이딩 윈도우','이분 탐색'] %}
@@ -66,4 +74,162 @@
       </div>
     </div>
   </div>
+=======
+        <div
+            class="px-4 md:px-6 py-4 border-b border-gray-200 bg-gradient-to-b from-gray-50 to-white"
+        >
+            <div class="flex flex-wrap items-center gap-2">
+                {% for k,v in keyword_solution.items() %}
+                <button
+                    class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full border border-gray-200"
+                    data-value="{{ v }}"
+                    onclick="showKeywordValue(this)"
+                >
+                    {{ k }}
+                </button>
+                {% endfor %}
+            </div>
+            <div
+                id="keyword-value-display"
+                class="mt-2 text-sm text-gray-600"
+            ></div>
+        </div>
+        <div class="p-4 md:p-6 space-y-6">
+            <section class="prose max-w-none">
+                {{ item.description or '알고리즘 내용' }}
+            </section>
+
+            <!-- 코드 블록 (있으면) -->
+            <section class="border border-gray-200 rounded-lg bg-gray-50 p-3">
+                <div class="flex items-center justify-between">
+                    <strong class="text-sm">코드</strong>
+                    <button
+                        type="button"
+                        class="text-xs text-gray-500"
+                        onclick="toggleEdit()"
+                    >
+                        ✏️ 수정
+                    </button>
+                </div>
+
+                <!-- 보기 모드 -->
+                <pre
+                    id="code-view"
+                    class="mt-2 overflow-auto text-xs"
+                ><code>{{ item.code }}</code></pre>
+
+                <!-- 수정 모드 (처음엔 hidden) -->
+                <div id="code-edit" class="hidden">
+                    <textarea
+                        id="code-input"
+                        class="mt-2 w-full h-40 rounded-md border border-gray-300 p-2 text-xs font-mono"
+                    ></textarea>
+                    <button
+                        type="button"
+                        class="text-xs text-blue-600 mt-2"
+                        onclick="updateCode()"
+                    >
+                        💾 저장
+                    </button>
+                </div>
+            </section>
+
+            <!-- AI 피드백 -->
+            {% if item.aiSuggestion %}
+            <section class="border border-gray-200 rounded-lg p-4">
+                <h3 class="font-semibold">{{item.aiSuggestion}}</h3>
+                <div class="space-y-4 mt-2 text-sm">
+                    <div>
+                        <div class="text-gray-600 font-medium">
+                            시간/공간 복잡도
+                        </div>
+                        <p class="font-mono">O(N log N) / O(N)</p>
+                    </div>
+                    <div>
+                        <div class="text-gray-600 font-medium">
+                            개선 포인트 Top 3
+                        </div>
+                        <ol class="list-decimal pl-5">
+                            <li>불필요한 정렬 제거</li>
+                            <li>조기 종료 조건 추가</li>
+                            <li>메모리 재사용</li>
+                        </ol>
+                    </div>
+                </div>
+            </section>
+            {% endif %}
+        </div>
+    </div>
+</div>
+<!-- Get the item from the jinja2 as item-data -->
+<script id="item-data" type="application/json">
+    {{ item | tojson }}
+</script>
+<script>
+    // 현재 선택된 태그를 기억
+    let currentEl = null;
+
+    function showKeywordValue(el) {
+        const display = document.getElementById("keyword-value-display");
+        const value = el.getAttribute("data-value");
+
+        // 같은 태그를 다시 누르면 토글(숨김)
+        if (currentEl === el) {
+            display.textContent = "";
+            el.classList.remove("bg-gray-100", "border-gray-300");
+            currentEl = null;
+            return;
+        }
+
+        // 다른 태그를 누르면 값 교체
+        if (currentEl) {
+            // 현재 EL 안보이게하기
+            currentEl.classList.remove("bg-gray-100", "border-gray-300");
+        }
+        el.classList.add("bg-gray-100", "border-gray-300");
+
+        // 문자열/객체 모두 보기 좋게 출력
+        display.textContent =
+            typeof value === "string" ? value : JSON.stringify(value, null, 2);
+
+        currentEl = el;
+    }
+    function toggleEdit() {
+        // 현재 코드 가져오기
+        const codeView = document.getElementById("code-view");
+        const codeEdit = document.getElementById("code-edit");
+        const textarea = document.getElementById("code-input");
+
+        // 코드 내용을 textarea에 복사
+        textarea.value = codeView.innerText.trim();
+
+        // 토글: 보기 숨기고, 수정 보이기
+        codeView.style.display = "none";
+        codeEdit.classList.remove("hidden");
+    }
+
+    async function updateCode() {
+        // don't change the name of the variable!!
+        const codeSnippets = document.getElementById("code-input").value;
+        const item = JSON.parse(
+            document.getElementById("item-data").textContent,
+        );
+        console.log(JSON.stringify({ codeSnippets }));
+        const response = await fetch(`/api/posts/${item.id}`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ codeSnippets }),
+        });
+
+        if (response.ok) {
+            alert("코드가 업데이트되었습니다!");
+            location.reload();
+        } else {
+            alert("업데이트 실패");
+        }
+    }
+</script>
+>>>>>>> main
 {% endblock %}
