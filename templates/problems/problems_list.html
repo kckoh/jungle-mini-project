@@ -46,7 +46,7 @@
               <span class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border border-gray-200 bg-gray-50 text-gray-700 mt-2">
                 코드 작성 미완료
               </span>
-            {% elif p.codeSnippets and not p.aiSuggestion %}
+            {% elif p.aiSuggestion == "리뷰 중" or (p.codeSnippets and not p.aiSuggestion) %}
               <span class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border border-yellow-200 bg-yellow-50 text-yellow-700 mt-2">
                 문제 분석 중
               </span>
@@ -60,7 +60,7 @@
             </div>
           </article>
 
-          
+
         {% endfor %}
       {% else %}
         <div class="border border-dashed rounded-lg p-6 text-center text-gray-500 bg-white">아직 담은 문제가 없어요. <a class="underline" href="/problems/new">새 문제 등록하기 →</a></div>
