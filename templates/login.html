@@ -1,12 +1,103 @@
-{% extends 'base.html' %} {% block title %}알고리즘 상세{% endblock %} {% block
-content %}
-    <h1>Algo 로그인</h1>
-    <form action="/api/login" method="post">
-        <div>이메일</div>
-        <input type="email" id="email" name="email" placeholder="Your email" required>
-        <div>비밀번호</div>
-        <input type="password" id="password" name="password" placeholder="Your password" required>
-        <button type="submit">로그인</button>
+{% extends 'base.html' %}
+{% block title %}Algo 로그인{% endblock %}
+{% block content %}
+
+<div class="border border-solid rounded-lg px-4">
+    <h1 class="py-4 text-4xl text-center">Algo 로그인</h1>
+
+    <form id="loginForm">
+        <div class="flex flex-col py-1">
+            <label for="email" class="pb-1">이메일</label>
+            <input type="email" class="peer bg-gray-200 w-full pl-3 h-8 rounded-lg invalid:border-red-500 invalid:border invalid:border-solid" id="email" name="email"
+                placeholder="Your email">
+            <a class="invisible peer-invalid:visible text-red-500 text-sm">올바른 이메일 형식이 아닙니다.</a>
+        </div>
+        <div class="flex flex-col py-1">
+            <label for="password" class="pb-1">비밀번호</label>
+            <input type="password" class="peer bg-gray-200 w-full pl-3 h-8 rounded-lg invalid:border-red-500 invalid:border invalid:border-solid" id="password" name="password"
+                placeholder="Your password">
+            <a class="invisible peer-invalid:visible text-red-500 text-sm">비밀번호는 영문자와 숫자 조합으로 6~12자여야 합니다.</a>
+        </div>
+        <button type="button" class="bg-gray-500 text-white w-full rounded-lg my-4 py-2" id="loginButton">로그인</button>
     </form>
-    <a href="/signup">회원가입하기</a>
+
+    <div class="pb-3"><a href="/signup" class="text-center">회원가입하기</a></div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const loginButton = document.getElementById('loginButton');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        const passwordRegex = /^[a-zA-Z0-9]{6,12}$/;
+
+        // form submit 이벤트 대신 button click 이벤트 사용
+        loginButton.addEventListener('click', function () {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            // 입력값 검증
+            if (!email || !password) {
+                alert('아이디와 비밀번호를 입력해주세요!');
+                return;
+            }
+
+            // API 호출
+            fetch('/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: email,
+                    password: password
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('로그인에 성공했습니다.');
+                        window.location.href = '/';
+                    } else {
+                        alert(data.message || '로그인에 실패했습니다.');
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                    alert('로그인 중 오류가 발생했습니다.');
+                });
+        });
+
+        const updateLoginButtonState = () => {
+            const isEmailValid = emailRegex.test(emailInput.value);
+            const isPasswordValid = passwordRegex.test(passwordInput.value);
+            
+            if (isEmailValid && isPasswordValid) {
+                loginButton.disabled = false;
+                loginButton.classList.remove('bg-gray-500', 'cursor-not-allowed');
+                loginButton.classList.add('bg-blue-500', 'hover:bg-blue-600', 'cursor-pointer');
+            } else {
+                loginButton.disabled = true;
+                loginButton.classList.remove('bg-blue-500', 'hover:bg-blue-600', 'cursor-pointer');
+                loginButton.classList.add('bg-gray-500', 'cursor-not-allowed');
+            }
+        };
+
+        emailInput.addEventListener('input', function () {
+            const isEmailValid = emailRegex.test(emailInput.value);
+            this.setCustomValidity(isEmailValid ? '' : 'invalid');
+            updateLoginButtonState();
+        });
+
+        passwordInput.addEventListener('input', function () {
+            const isPasswordValid = passwordRegex.test(passwordInput.value);
+            this.setCustomValidity(isPasswordValid ? '' : 'invalid');
+            updateLoginButtonState();
+        });
+    });
+</script>
+
 {% endblock %}

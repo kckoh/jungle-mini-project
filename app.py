@@ -49,7 +49,7 @@ posts = db["posts"]
 @app.get("/")
 @login_required
 def index():
-    return render_template('hello.html')
+    return render_template('base.html')
 
 # 예시: 보호된 페이지
 # @app.route('/protected')
@@ -65,29 +65,27 @@ def db_ping():
     except Exception as e:
         return jsonify(ok=False, error=str(e)), 500
 
-# 페이지 라우트
 @app.get("/login")
 def login_page():
-    if 'email' in session:  # 이미 로그인된 사용자는 메인 페이지로
+    if 'email' in session:
         return redirect(url_for('index'))
     return render_template('login.html')
 
 @app.get("/signup")
 def signup_page():
-    if 'email' in session:  # 이미 로그인된 사용자는 메인 페이지로
+    if 'email' in session:
         return redirect(url_for('index'))
     return render_template('signup.html')
 
-@app.get("/logout")
+@app.route("/logout")
 def logout():
     session.clear()
     return redirect(url_for('login_page'))
 
-# API 라우트
 @app.post("/api/login")
 def login():
     try:
-        data = request.form
+        data = request.json
         email = data.get('email')
         password = data.get('password')
         
@@ -97,44 +95,39 @@ def login():
         if user:
             session['email'] = email
             app.logger.info(f"Login successful for email: {email}")
-            return redirect(url_for('index'))
+            return jsonify({"success": True, "message": "로그인에 성공했습니다."})
         else:
             app.logger.warning(f"Login failed for email: {email}")
-            return redirect(url_for('login_page'))
-            
+            return jsonify({"success": False, "message": "아이디와 비밀번호를 확인해주세요."})
+
     except Exception as e:
         app.logger.error(f"Login error for email {email if 'email' in locals() else 'unknown'}: {str(e)}")
-        return redirect(url_for('login_page'))
+        return jsonify({"success": False, "message": "로그인 중 오류가 발생했습니다."})
 
 @app.post("/api/signup")
 def signup():
     try:
-        data = request.form
+        data = request.json
         email = data.get('email')
         password = data.get('password')
         
         app.logger.info(f"Signup attempt for email: {email}")
         
-        # 이메일 중복 체크
         if db.users.find_one({"email": email}):
             app.logger.warning(f"Signup failed - duplicate email: {email}")
-            return redirect(url_for('signup_page'))
+            return jsonify({"success": False, "message": "이미 사용 중인 이메일입니다."})
             
-        # 데이터베이스에 저장
         db.users.insert_one({
             "email": email,
-            "password": password  # 실제 운영에서는 반드시 암호화해야 합니다!
+            "password": password
         })
-        
-        # 회원가입 후 바로 로그인 처리
-        session['email'] = email
-        app.logger.info(f"Signup and login successful for email: {email}")
-        return redirect(url_for('index'))
-            
+
+        return jsonify({"success": True, "message": "회원가입이 완료되었습니다."})
+
     except Exception as e:
         app.logger.error(f"Signup error for email {email if 'email' in locals() else 'unknown'}: {str(e)}")
-        return redirect(url_for('signup_page'))
-    
+        return jsonify({"success": False, "message": "회원가입 중 오류가 발생했습니다."})
+
 
 
 # 간단한 비동기 작업

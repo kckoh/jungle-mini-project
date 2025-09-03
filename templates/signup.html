@@ -1,23 +1,129 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Signup</title>
-    <script src="/static/js/signup.js" defer></script>
-</head>
+{% extends 'base.html' %}
+{% block title %}Algo 회원가입{% endblock %}
+{% block content %}
 
-<body>
-    <h1>Algo 회원가입</h1>
-    <form id="signupForm" action="/api/signup" method="post">
-        <div>이메일</div>
-        <input type="email" id="email" name="email" placeholder="Your email">
-        <div>비밀번호</div>
-        <input type="password" id="password" name="password" placeholder="Your password">
-        <div>비밀번호 재입력</div>
-        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm your password">
-        <button type="submit">회원가입</button>
+<h1 class="py-4 text-4xl text-center">Algo 회원가입</h1>
+
+<div class="border border-solid rounded-lg px-4">
+    <form id="signupForm">
+        <div class="flex flex-col py-1">
+            <label for="email" class="pb-1">이메일</label>
+            <input type="email"
+                class="peer bg-gray-200 w-full pl-3 h-8 rounded-lg invalid:border-red-500 invalid:border invalid:border-solid"
+                id="email" name="email" placeholder="Your email">
+            <a class="invisible peer-invalid:visible text-red-500 text-sm">올바른 이메일 형식이 아닙니다.</a>
+        </div>
+        <div class="flex flex-col py-1">
+            <label for="password" class="pb-1">비밀번호</label>
+            <input type="password"
+                class="peer bg-gray-200 w-full pl-3 h-8 rounded-lg invalid:border-red-500 invalid:border invalid:border-solid"
+                id="password" name="password" placeholder="Your password">
+            <a class="invisible peer-invalid:visible text-red-500 text-sm">비밀번호는 영문자와 숫자 조합으로 6~12자여야 합니다.</a>
+        </div>
+        <div class="flex flex-col py-1">
+            <label for="confirmPassword" class="pb-1">비밀번호 재입력</label>
+            <input type="password"
+                class="peer bg-gray-200 w-full pl-3 h-8 rounded-lg invalid:border-red-500 invalid:border invalid:border-solid"
+                id="confirmPassword" name="confirmPassword" placeholder="Confirm your password">
+            <a class="invisible peer-invalid:visible text-red-500 text-sm">비밀번호가 일치하지 않습니다.</a>
+        </div>
+
+        <button type="button" class="bg-gray-500 text-white w-full rounded-lg my-4 py-2" id="signupButton">회원가입</button>
     </form>
-    <a href="/login">로그인하기</a>
-</body>
-</html>
+
+    <div class="pb-3"><a href="/login">로그인하기</a></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const signupButton = document.getElementById('signupButton');
+
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            const confirmPasswordInput = document.getElementById('confirmPassword');
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            const passwordRegex = /^[a-zA-Z0-9]{6,12}$/;
+
+            // form submit 이벤트 대신 button click 이벤트 사용
+            signupButton.addEventListener('click', function () {
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                // 입력값 검증
+                if (!emailInput.value || !passwordInput.value || !confirmPasswordInput.value) {
+                    alert('모든 필드를 입력해주세요!');
+                    console.log('이메일:', emailInput.value);
+                    console.log('비밀번호:', passwordInput.value);
+                    console.log('비밀번호 확인:', confirmPasswordInput.value);
+                    return;
+                }
+
+                // 비밀번호 일치 여부 확인
+                if (passwordInput.value !== confirmPasswordInput.value) {
+                    alert('패스워드가 일치하지 않습니다.');
+                    return;
+                }
+
+                // API 호출
+                fetch('/api/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password
+                    })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('회원가입이 완료되었습니다.');
+                            window.location.href = '/login';
+                        } else {
+                            alert(data.message || '회원가입에 실패했습니다.');
+                        }
+                    })
+                    .catch(error => {
+                        alert('서버 오류가 발생했습니다.');
+                        console.error('Error:', error);
+                    });
+            });
+
+            const updateSignupButtonState = () => {
+                const isEmailValid = emailRegex.test(emailInput.value);
+                const isPasswordValid = passwordRegex.test(passwordInput.value);
+                const isConfirmPasswordValid = passwordInput.value === confirmPasswordInput.value;
+
+                if (isEmailValid && isPasswordValid && isConfirmPasswordValid) {
+                    signupButton.disabled = false;
+                    signupButton.classList.remove('bg-gray-500', 'cursor-not-allowed');
+                    signupButton.classList.add('bg-blue-500', 'hover:bg-blue-600', 'cursor-pointer');
+                } else {
+                    signupButton.disabled = true;
+                    signupButton.classList.remove('bg-blue-500', 'hover:bg-blue-600', 'cursor-pointer');
+                    signupButton.classList.add('bg-gray-500', 'cursor-not-allowed');
+                }
+            };
+
+            emailInput.addEventListener('input', function () {
+                const isEmailValid = emailRegex.test(emailInput.value);
+                this.setCustomValidity(isEmailValid ? '' : 'invalid');
+                updateSignupButtonState();
+            });
+
+            passwordInput.addEventListener('input', function () {
+                const isPasswordValid = passwordRegex.test(passwordInput.value);
+                this.setCustomValidity(isPasswordValid ? '' : 'invalid');
+                updateSignupButtonState();
+            });
+
+            confirmPasswordInput.addEventListener('input', function () {
+                const isConfirmPasswordValid = passwordInput.value === confirmPasswordInput.value;
+                this.setCustomValidity(isConfirmPasswordValid ? '' : 'invalid');
+                updateSignupButtonState();
+            });
+        });
+    </script>
+
+    {% endblock %}
