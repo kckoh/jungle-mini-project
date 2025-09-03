@@ -71,7 +71,7 @@ users = db["users"]
 @app.get("/")
 @login_required
 def index():
-    return render_template('base.html')
+    return render_template('problem_list.html')
 
 
 @app.get("/db/ping")
@@ -87,7 +87,7 @@ def db_ping():
 @app.get("/login")
 def login_page():
     if 'email' in session:
-        return redirect(url_for('index'))
+        return redirect(url_for('problems_list'))
     return render_template('login.html')
 
 
@@ -95,7 +95,7 @@ def login_page():
 @app.get("/signup")
 def signup_page():
     if 'email' in session:
-        return redirect(url_for('index'))
+        return redirect(url_for('problems_list'))
     return render_template('signup.html')
 
 
@@ -230,6 +230,7 @@ def get_store_keywords(title_description):
     doc.setdefault("data_structures",parsed['data_structures'])
     doc.setdefault("algorithms",parsed['algorithms'])
     doc.setdefault("concepts",parsed['concepts'])
+    doc.setdefault("email",title_description['email'])
     result = posts.insert_one(doc)
 
     _id = str(result.inserted_id)
@@ -299,14 +300,21 @@ def get_store_aisuggestion(pid, post):
 
 @app.route("/api/posts", methods=['POST'])
 def create_post():
+    # {"title": "some title" , "description": "주어진 배열에서 구간 합을 구하는 문제"}
     data = request.get_json(silent=True)
     if data is None:
-            return jsonify(error="JSON body required with Content-Type: application/json"), 400
+        return jsonify(error="JSON body required with Content-Type: application/json"), 400
+    
+    if 'email' not in session:
+        return jsonify(error="login required"), 403
+
+    data['email'] = session.get('email')
+
+
     # celery
     task = get_store_keywords.delay(data)
 
-    return jsonify({"task_id": task.id }), 201
-
+    return jsonify({"task_id": task.id, "success": True}), 201
 
 # assuming that pid = objectid from the mongodb
 @app.route("/problems/<pid>")
@@ -339,6 +347,14 @@ def problem_detail(pid):
     }
 
     return render_template("problems/problem_detail.html", item=item, keyword_solution=keyword_solution)
+
+
+
+
+@app.route("/problems/new")
+@login_required
+def new_problem():
+    return render_template("problems/problem_new.html")
 
 
 @app.route("/problems")
@@ -388,3 +404,4 @@ if __name__ == "__main__":
         debug=os.environ.get("FLASK_DEBUG", "false").lower() == "true",
         use_reloader=False,
     )
+
