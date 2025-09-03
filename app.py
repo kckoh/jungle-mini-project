@@ -374,6 +374,8 @@ def problem_list():
         if tags:
             result['tags'] = tags
 
+    app.logger.info(results)
+
     return render_template("problems/problem_list.html", items=results)
 
 
