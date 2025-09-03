@@ -6,6 +6,8 @@ services:
     container_name: flask_app
     ports:
       - "5001:5000"
+    volumes:
+      - .:/app
     command: flask run --host=0.0.0.0 --port=5000 --reload
     environment:
       FLASK_HOST: 0.0.0.0
@@ -14,7 +16,9 @@ services:
       MONGO_URI: mongodb://root:example@mongo:27017/appdb?authSource=admin
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_API_KEY_FILE: /run/secrets/openai_api_key
+    secrets:
+      - openai_api_key
     depends_on:
       - mongo
       - redis
@@ -22,13 +26,17 @@ services:
   celery:
     build: .
     container_name: celery_worker
+    volumes:
+      - .:/app
     command: celery -A app.celery worker --loglevel=info
 
     environment:
       MONGO_URI: mongodb://root:example@mongo:27017/appdb?authSource=admin
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_API_KEY_FILE: /run/secrets/openai_api_key
+    secrets:
+      - openai_api_key
     depends_on:
       - web
       - redis
@@ -69,4 +77,6 @@ services:
 volumes:
   mongo_data:
 
-
+secrets:
+  openai_api_key:
+    file: ./secrets/openai_api_key.txt
