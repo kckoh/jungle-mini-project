@@ -27,6 +27,7 @@ def login_required(f):
 # TODO
 # problem_new.html -> frontend: javascript fetch API ; backend:
 # problem_list.html -> backend API: GET /api/posts GET /api/search, frontend
+# /api/posts (pagination) + /api/search (search)
 # Celery 설정
 app.config.update(
     CELERY_BROKER_URL=os.environ.get("CELERY_BROKER_URL", "redis://redis:6379/0"),
@@ -271,7 +272,7 @@ def get_store_aisuggestion(pid, post):
     Code Snippets:
     {post.get("codeSnippets", "")}
     """
-    print("promt===",prompt)
+
     response = openai.chat.completions.create(
         model="gpt-4o-mini",  # or "gpt-4o-mini" if you want cheaper/faster
         messages=[
@@ -281,7 +282,6 @@ def get_store_aisuggestion(pid, post):
         response_format={"type": "json_object"}  # ensures valid JSON
     )
 
-    print("response====",response.choices[0].message.content)
     deserialized = json.loads(response.choices[0].message.content)
     aisuggestion = {'aiSuggestion': deserialized}
     # doc.setdefault("data_structures",parsed['data_structures'])
@@ -345,7 +345,6 @@ def problem_detail(pid):
 @login_required
 def problem_list():
     # retrieve the email from the session
-    print("session====",session['email'])
     results = list(posts.find({"email": session['email']}))
 
     for result in results:
@@ -365,7 +364,6 @@ def problem_list():
 @app.route("/api/posts/<pid>", methods=['PATCH'])
 def update_post(pid):
     data = request.get_json()
-    print("data=====", data)
     try:
         result = posts.find_one_and_update(
             {"_id": ObjectId(pid)},
