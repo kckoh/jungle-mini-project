@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}새 포스트 작성{% endblock %}
+{% block title %}새 알고리즘 작성{% endblock %}
 {% block content %}
   <div class="max-w-5xl mx-auto px-0">
     <!-- 본문 카드 -->
@@ -58,10 +58,10 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert('포스트가 성공적으로 저장되었습니다.');
+                    alert('알고리즘이 성공적으로 저장되었습니다.');
                     window.location.href = `/problems`;
                 } else {
-                    alert('포스트 저장에 실패했습니다. 다시 시도해주세요.');
+                    alert('알고리즘 저장에 실패했습니다. 다시 시도해주세요.');
                 }
             })
             .catch((error) => {

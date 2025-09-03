@@ -1,22 +1,25 @@
 {% extends 'base.html' %}
 {% block title %}Algo 회원가입{% endblock %}
 {% block content %}
+<section class="min-h-[60vh] flex items-center justify-center">
+    <div class="w-full max-w-md space-y-6">
+      <div class="text-center">
+        <h1 class="text-2xl font-bold">회원가입</h1>
+        <p class="text-sm text-gray-500 mt-1">알고리즘이 어려운가요? 저희가 도와줄게요. 함께 성장해요!</p>
+      </div>
 
-<h1 class="py-4 text-4xl text-center">Algo 회원가입</h1>
-
-<div class="border border-solid rounded-lg px-4">
-    <form id="signupForm">
+    <form id="signupForm" class="border border-gray-200 rounded-xl p-6 space-y-5 bg-white">
         <div class="flex flex-col py-1">
             <label for="email" class="pb-1">이메일</label>
             <input type="email"
-                class="peer bg-gray-200 w-full pl-3 h-8 rounded-lg invalid:border-red-500 invalid:border invalid:border-solid"
+                class="peer bg-gray-200 w-full pl-3 h-10 rounded-lg invalid:border-red-500 invalid:border invalid:border-solid"
                 id="email" name="email" placeholder="Your email">
             <a class="invisible peer-invalid:visible text-red-500 text-sm">올바른 이메일 형식이 아닙니다.</a>
         </div>
         <div class="flex flex-col py-1">
             <label for="password" class="pb-1">비밀번호</label>
             <input type="password"
-                class="peer bg-gray-200 w-full pl-3 h-8 rounded-lg invalid:border-red-500 invalid:border invalid:border-solid"
+                class="peer bg-gray-200 w-full pl-3 h-10 rounded-lg invalid:border-red-500 invalid:border invalid:border-solid"
                 id="password" name="password" placeholder="Your password">
             <a class="invisible peer-invalid:visible text-red-500 text-sm">비밀번호는 영문자와 숫자 조합으로 6~12자여야 합니다.</a>
         </div>
@@ -31,7 +34,11 @@
         <button type="button" class="bg-gray-500 text-white w-full rounded-lg my-4 py-2" id="signupButton">회원가입</button>
     </form>
 
-    <div class="pb-3"><a href="/login">로그인하기</a></div>
+    <div class="text-center text-sm">
+      이미 계정이 있으신가요? <a class="underline" href="/login">로그인</a>
+    </div>
+</div>
+</section>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {

@@ -390,6 +390,8 @@ def problems():
                 "algorithms.keyword": 1,
                 "concepts.keyword": 1,
                 "created_at": 1,
+                "aiSuggestion": 1,
+                "codeSnippets": 1
             },
         )
         .sort("_id", DESCENDING)
