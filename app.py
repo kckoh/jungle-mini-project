@@ -407,9 +407,10 @@ def get_store_aisuggestion(pid, post):
 
 @app.route("/api/posts", methods=['POST'])
 def create_post():
+    # {"title": "some title" , "description": "주어진 배열에서 구간 합을 구하는 문제"}
     data = request.get_json(silent=True)
     if data is None:
-            return jsonify(error="JSON body required with Content-Type: application/json"), 400
+        return jsonify(error="JSON body required with Content-Type: application/json"), 400
     # celery
     task = get_store_keywords.delay(data)
 
