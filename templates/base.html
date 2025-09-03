@@ -35,7 +35,7 @@
         <span class="mx-1 h-5 w-px bg-gray-200 hidden sm:inline-block"></span>
         {% if session.email %}
           <span class="px-3 py-2 text-sm text-gray-600 hidden sm:inline">{{ session.email }}</span>
-          <form method="post" action="/logout">
+          <form method="get" action="/logout">
             <button class="px-3 py-2 rounded-md hover:bg-gray-100 text-sm" type="submit">로그아웃</button>
           </form>
         {% else %}

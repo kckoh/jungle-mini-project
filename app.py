@@ -213,6 +213,7 @@ def get_store_keywords(title_description):
     doc.setdefault("data_structures",parsed['data_structures'])
     doc.setdefault("algorithms",parsed['algorithms'])
     doc.setdefault("concepts",parsed['concepts'])
+    doc.setdefault("email",title_description['email'])
     result = posts.insert_one(doc)
 
     _id = str(result.inserted_id)
@@ -289,10 +290,17 @@ def create_post():
     data = request.get_json(silent=True)
     if data is None:
         return jsonify(error="JSON body required with Content-Type: application/json"), 400
+    
+    if 'email' not in session:
+        return jsonify(error="login required"), 403
+
+    data['email'] = session.get('email')
+
+
     # celery
     task = get_store_keywords.delay(data)
 
-    return jsonify({"task_id": task.id }), 201
+    return jsonify({"task_id": task.id, "success": True}), 201
 
 
 
@@ -327,6 +335,11 @@ def problem_detail(pid):
     }
 
     return render_template("problems/problem_detail.html", item=item, keyword_solution=keyword_solution)
+
+@app.route("/problems/new")
+@login_required
+def new_problem():
+    return render_template("problems/problem_new.html")
 
 # TODO
 # handle aisuggestion in the frontend
