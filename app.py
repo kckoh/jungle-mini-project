@@ -71,7 +71,7 @@ users = db["users"]
 @app.get("/")
 @login_required
 def index():
-    return render_template('problem_list.html')
+    return render_template('/problems/problems_list.html')
 
 
 @app.get("/db/ping")
@@ -304,7 +304,7 @@ def create_post():
     data = request.get_json(silent=True)
     if data is None:
         return jsonify(error="JSON body required with Content-Type: application/json"), 400
-    
+
     if 'email' not in session:
         return jsonify(error="login required"), 403
 
@@ -374,7 +374,7 @@ def problem_list():
         if tags:
             result['tags'] = tags
 
-    return render_template("problems/problem_list.html", items=results)
+    return render_template("problems/problems_list.html", items=results)
 
 
 @app.route("/api/posts/<pid>", methods=['PATCH'])
@@ -404,4 +404,3 @@ if __name__ == "__main__":
         debug=os.environ.get("FLASK_DEBUG", "false").lower() == "true",
         use_reloader=False,
     )
-
