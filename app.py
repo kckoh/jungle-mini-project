@@ -199,7 +199,7 @@ def add_meta(d):
 
 
 @celery.task
-def get_store_keywords(title_description_approach):
+def get_store_keywords(pid,title_description_approach):
 
     # save the data to the mongodb
     doc = add_meta(title_description_approach)
@@ -267,10 +267,10 @@ def get_store_keywords(title_description_approach):
     }
     posts.update_one({"_id": ObjectId(pid)}, {"$set": to_set})
     # app.logger.info(f"Inserted Problem ID: {doc['id']}")
-    
+
     return pid
 
-  
+
 
 
 
@@ -354,6 +354,7 @@ def create_post():
     pid = str(tmp.inserted_id)
 
 
+
     # celery
     task = get_store_keywords.delay(pid,data)
 
@@ -375,7 +376,7 @@ def problem_detail(pid):
         "title": result["title"],
         "description": result['description'],
         "created_at": result['created_at'].date(),
-        "user_approach": result['user_approach'],
+        "approach": result['approach'],
         # "code": "def prefix_sum(arr):\n    ...",
     }
     if 'codeSnippets' in result:
