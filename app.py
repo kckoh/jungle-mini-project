@@ -361,6 +361,7 @@ def problem_detail(pid):
         "title": result["title"],
         "description": result['description'],
         "created_at": result['created_at'].date(),
+        "user_approach": result['user_approach'],
         # "code": "def prefix_sum(arr):\n    ...",
     }
     if 'codeSnippets' in result:
@@ -377,7 +378,7 @@ def problem_detail(pid):
         item["keyword"]: item["explanation"]
         for item in data
     }
-    print("item====", item)
+
     return render_template("problems/problem_detail.html", item=item, keyword_solution=keyword_solution)
 
 @app.route("/problems/new")
