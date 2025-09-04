@@ -10,10 +10,12 @@ from datetime import datetime
 import json
 from bson import ObjectId
 import re
+from flask_bcrypt import Bcrypt
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')
 
+bcrypt = Bcrypt(app)
 
 # 로그인 체크 데코레이터
 def login_required(f):
@@ -117,8 +119,8 @@ def login():
         email = data.get('email')
         password = data.get('password')
 
-        user = users.find_one({"email": email, "password": password})
-        if user:
+        user = users.find_one({"email": email})
+        if user and bcrypt.check_password_hash(user['hashed_password'], password):
             session['email'] = email
             return jsonify({"success": True, "message": "로그인에 성공했습니다."})
         else:
@@ -135,6 +137,7 @@ def signup():
         data = request.json
         email = data.get('email')
         password = data.get('password')
+        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
 
 
         if users.find_one({"email": email}):
@@ -142,7 +145,7 @@ def signup():
 
         users.insert_one({
             "email": email,
-            "password": password
+            "hashed_password": hashed_password
         })
 
         return jsonify({"success": True, "message": "회원가입이 완료되었습니다."})
