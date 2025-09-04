@@ -198,9 +198,49 @@ content %}
             </section>
             {% endif %}-->
 
-            <section class="border border-gray-200 rounded-lg p-4 space-y-2">
+            <section
+                class="border border-gray-200 rounded-lg p-4 space-y-2 relative"
+            >
+                <!-- 오른쪽 위 수정 버튼 -->
+                <button
+                    type="button"
+                    id="approach-edit-btn"
+                    class="absolute top-3 right-3 inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border border-gray-200 hover:bg-gray-50"
+                    onclick="toggleApproachEdit()"
+                >
+                    ✏️ 수정
+                </button>
+
                 <h3 class="font-semibold">접근방식</h3>
-                <p>{{ item.approach }}</p>
+
+                <!-- 보기 모드 -->
+                <p id="approach-view" class="pr-16">{{ item.approach }}</p>
+
+                <!-- 수정 모드 (처음엔 hidden) -->
+                <div id="approach-edit" class="hidden space-y-2">
+                    <textarea
+                        id="approach-input"
+                        class="w-full h-32 rounded-md border border-gray-300 p-2 text-sm"
+                    >
+{{ item.approach }}</textarea
+                    >
+                    <div class="flex gap-2">
+                        <button
+                            type="button"
+                            class="text-xs text-blue-600"
+                            onclick="saveApproach()"
+                        >
+                            💾 저장
+                        </button>
+                        <button
+                            type="button"
+                            class="text-xs text-gray-500"
+                            onclick="cancelApproachEdit()"
+                        >
+                            취소
+                        </button>
+                    </div>
+                </div>
             </section>
 
             {% set ai = item.aiSuggestion %} {% if ai is string and ai|trim in
@@ -302,6 +342,42 @@ content %}
         if (response.ok) {
             alert("코드가 업데이트되었습니다!");
             location.reload();
+        } else {
+            alert("업데이트 실패");
+        }
+    }
+</script>
+
+<script>
+    function toggleApproachEdit() {
+        document.getElementById("approach-view").classList.add("hidden");
+        document.getElementById("approach-edit").classList.remove("hidden");
+        document.getElementById("approach-edit-btn").classList.add("hidden");
+    }
+
+    function cancelApproachEdit() {
+        document.getElementById("approach-view").classList.remove("hidden");
+        document.getElementById("approach-edit").classList.add("hidden");
+        document.getElementById("approach-edit-btn").classList.remove("hidden");
+    }
+
+    async function saveApproach() {
+        const newApproach = document
+            .getElementById("approach-input")
+            .value.trim();
+        const item = JSON.parse(
+            document.getElementById("item-data").textContent,
+        );
+
+        const res = await fetch(`/api/posts/${item.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ approach: newApproach }),
+        });
+
+        if (res.ok) {
+            document.getElementById("approach-view").textContent = newApproach;
+            cancelApproachEdit();
         } else {
             alert("업데이트 실패");
         }
