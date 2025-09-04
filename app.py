@@ -199,49 +199,79 @@ def add_meta(d):
 
 
 @celery.task
-def get_store_keywords(pid,title_description):
+def get_store_keywords(pid,title_description_approach):
+
     # save the data to the mongodb
-    doc = add_meta(title_description)
+    doc = add_meta(title_description_approach)
 
     # call chatgpt API
-    prompt =  f"""You are an expert algorithm problem analyst.
-    Given a problem Title and Description, extract only the essential keywords required to solve it, and give a crisp Korean explanation for each keyword.
+    prompt = f"""
+    You are an expert algorithm problem analyst.
+    Given a problem Title, Description, and an Approach, do the following:
+
+    1. Extract only the essential keywords required to solve it.
+    2. Provide clear Korean explanations for each keyword (≤2 sentences, practical: 왜 필요한지/언제 쓰는지).
+    3. Based on the given Approach, generate concrete suggestions or warnings, and give me your opinions on the user approach (e.g., is it the right aproach?) and put them in the "advice" array.
+
+    ⚠️ VERY IMPORTANT:
+    - "advice" MUST be ONLY a list of plain strings.
+    - DO NOT include keyword/explanation objects inside advice.
+    - If advice is not a string, your answer is invalid.
+
     OUTPUT RULES:
-    - Return STRICTLY valid JSON with these 3 arrays:
+    - Return STRICTLY valid JSON with exactly 4 arrays:
     {{
       "data_structures": [{{"keyword": "...", "explanation": "..."}}],
       "algorithms": [{{"keyword": "...", "explanation": "..."}}],
-      "concepts": [{{"keyword": "...", "explanation": "..."}}]
+      "concepts": [{{"keyword": "...", "explanation": "..."}}],
+      "advice": ["...", "..."]
     }}
 
-    - 3~8 items total; avoid duplicates and synonyms.
-    - Explanations must be ≤ 2 sentences, Korean, practical (왜 필요한지/언제 쓰는지)
+    ✅ Correct example:
+    "advice": ["조건문 대신 switch문을 고려해라", "입력이 많으므로 O(n log n) 접근이 필요하다"]
 
-    Title: {title_description.get("title")}
-    Description: {title_description.get("description")}
+    ❌ Wrong example (DO NOT do this):
+    "advice": [{{"keyword": "조건문", "explanation": "점수 비교에 필요하다"}}]
+
+    - 3~8 total items across data_structures/algorithms/concepts (avoid duplicates or synonyms).
+    - advice must be 2–5 items, short and actionable, each based on the provided Approach.
+    - "advice" MUST be a non-empty list of plain strings (length 2–5).
+    - If advice would be empty, your answer is INVALID — generate best-practice advice inferred from Title/Description.
+    - DO NOT output objects inside "advice".
+
+
+    Title: {title_description_approach.get("title")}
+    Description: {title_description_approach.get("description")}
+    Approach: {title_description_approach.get("approach")}
     """
+
     response = openai.chat.completions.create(
-        model="gpt-4o-mini",  # or "gpt-4o-mini" if you want cheaper/faster
+        model="gpt-4.1",              # 사용 모델 지정
         messages=[
             {"role": "system", "content": "You are an expert algorithm problem analyst."},
             {"role": "user", "content": prompt}
         ],
-        response_format={"type": "json_object"}  # ensures valid JSON
+        response_format={"type": "json_object"}  # JSON 강제
     )
 
     parsed = json.loads(response.choices[0].message.content)
-    doc.setdefault("data_structures",parsed['data_structures'])
-    doc.setdefault("algorithms",parsed['algorithms'])
-    doc.setdefault("concepts",parsed['concepts'])
+#     doc.setdefault("data_structures",parsed['data_structures'])
+#     doc.setdefault("algorithms",parsed['algorithms'])
+#     doc.setdefault("concepts",parsed['concepts'])
+
     to_set = {
     "data_structures": parsed.get("data_structures", []),
     "algorithms": parsed.get("algorithms", []),
     "concepts": parsed.get("concepts", []),
+    "advice": parsed.get("advice", []),
     }
     posts.update_one({"_id": ObjectId(pid)}, {"$set": to_set})
     # app.logger.info(f"Inserted Problem ID: {doc['id']}")
-    
+
     return pid
+
+
+
 
 
 @celery.task
@@ -323,6 +353,8 @@ def create_post():
     data["_id"] = str(tmp.inserted_id)
     pid = str(tmp.inserted_id)
 
+
+
     # celery
     task = get_store_keywords.delay(pid,data)
 
@@ -344,12 +376,16 @@ def problem_detail(pid):
         "title": result["title"],
         "description": result['description'],
         "created_at": result['created_at'].date(),
+        "approach": result['approach'],
         # "code": "def prefix_sum(arr):\n    ...",
     }
     if 'codeSnippets' in result:
         item.setdefault('code',result['codeSnippets'] )
-    if 'aiSuggestion' in result:
-        item.setdefault('aiSuggestion', result['aiSuggestion'])
+    # if 'aiSuggestion' in result:
+    #     item.setdefault('aiSuggestion', result['aiSuggestion'])
+    if 'advice' in result:
+        item.setdefault('aiSuggestion', result['advice'])
+
     # unpack data_structures, algorithms, concepts
     if 'data_structures' in result:
         data = result['data_structures'] + result['algorithms'] + result['concepts']
