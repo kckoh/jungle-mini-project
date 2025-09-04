@@ -30,27 +30,19 @@
               <h2 class="font-medium truncate">{{ p.title }}</h2>
               <span class="text-xs text-gray-500 shrink-0">{{ p.created_at or '방금 전' }}</span>
             </div>
-
             {% if p.tags %}
-              <div class="mt-2 flex flex-wrap gap-1">
-                {% for tag in p.tags %}
-                  <span class="text-xs px-2 py-1 rounded-full border border-gray-200">{{ tag }}</span>
-                {% endfor %}
-              </div>
+            <span class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border border-green-200 bg-green-50 text-green-700">
+              AI 문제 분석 완료
+            </span>
+            {% for tag in p.tags %}
+              <span class="text-xs px-2 py-1 rounded-full border border-gray-200">{{ tag }}</span>
+            {% endfor %}
+            {% else %}
+            <span class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border border-yellow-200 bg-yellow-50 text-yellow-700 mt-2">
+              문제 분석 중
+            </span>
             {% endif %}
-            <p class="text-sm text-gray-700 mt-3 line-clamp-2">{{ p.body }}</p>
-            {% if p.aiSuggestion == "리뷰 중" or (p.codeSnippets and not p.aiSuggestion) %}
-              <span class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border border-yellow-200 bg-yellow-50 text-yellow-700 mt-2">
-                문제 분석 중
-              </span>
-            {% elif p.codeSnippets and p.aiSuggestion %}
-              <span class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border border-green-200 bg-green-50 text-green-700 mt-2">
-                문제 분석 완료
-              </span>
-              {% for tag in p.tags %}
-                  <span class="text-xs px-2 py-1 rounded-full border border-gray-200">{{ tag }}</span>
-                {% endfor %}
-            {% endif %}
+        
             <div class="mt-3">
               <a href="/problems/{{ p._id }}" class="inline-flex items-center text-xs px-2 py-1 rounded border border-gray-200 hover:bg-gray-50">자세히 보기</a>
             </div>

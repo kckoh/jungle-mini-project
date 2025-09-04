@@ -1,9 +1,9 @@
 {% extends 'base.html' %} {% block title %}알고리즘 상세{% endblock %} {% block
 content %}
-<div class="signup-card max-w-3xl mx-auto px-4 md:px-6">
-    <div class="card-inner">
+<div class="max-w-5xl mx-auto px-0">
+
     <!-- 상단 헤더 -->
-    <div class="pt-2 pb-4 md:pt-4 md:pb-6">
+    <div class="pt-2 pb-4 mx-1 ">
         <div class="flex items-start justify-between gap-3">
             <div>
                 <h1 class="text-xl md:text-2xl font-bold tracking-tight">
@@ -21,15 +21,16 @@ content %}
         </div>
     </div>
 
+    <div class="mt-2 mb-6 mx-1">
+       {{ item.description or '알고리즘 내용' }}
+    </div>
+
     <!-- 본문 카드 -->
     <div class="border border-gray-200 rounded-xl bg-white overflow-hidden">
         <div
-            class="px-4 md:px-6 py-4 border-b border-gray-200 bg-gradient-to-b from-gray-50 to-white"
+            class="px-4 md:px-6 py-4 border-b border-gray-200"
         >
-            <p class="p-2 text-xs text-gray-500 mt-1">
-                    키워드 
-            </p>
-             <section class="prose max-w-none">
+      
                 <div>
                     {% for k,v in keyword_solution.items() %}
                     <button
@@ -41,20 +42,28 @@ content %}
                     </button>
                     {% endfor %}
                 </div>
-            </section>
+       
             <div
                 id="keyword-value-display"
                 class="mt-2 text-sm text-gray-600"
             ></div>
         </div>
-        <div class="p-4 md:p-6 space-y-6">
-            <p class="text-xs text-gray-500 mt-1">
-                    키워드 
-            </p>
-            <section class="prose max-w-none">
-                {{ item.description or '알고리즘 내용' }}
-            </section>
+     
+      </div>
+    </div>
+    
+    <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- 왼쪽 카드: 추가 정보 / 예제 등 -->
+        <div class="bg-white border border-gray-200 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-colors">
+            <div class="text-sm text-gray-600 mb-2">아아아</div>
+            <div class="text-sm text-gray-700">
+                <!-- 필요하면 여기에 본문 예제나 추가 메타를 넣으세요 -->
+            </div>
+        </div>
 
+        <!-- 오른쪽 카드: AI 피드백 -->
+        <div class="bg-white border border-gray-200 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-colors flex flex-col">
+            <div class="text-sm text-gray-600 mb-4">아아아</div>
             <!-- AI 피드백 -->
             {% macro render_value(val) %} {% if val is mapping %}
             <div class="space-y-2">
@@ -71,24 +80,13 @@ content %}
                 <li>{{ render_value(item) }}</li>
                 {% endfor %}
             </ul>
-            {% else %} {{ val }} {% endif %} {% endmacro %} {# === 여기부터 교체
-            === #} {% set ai = item.aiSuggestion %} {% if ai is string and
-            ai|trim in ["리뷰 중", "리뷰중"] %}
+            {% else %} {{ val }} {% endif %} {% endmacro %} {# === 여기부터 교체 === #}
+            {% set ai = item.aiSuggestion %} {% if ai is string and ai|trim in ["리뷰 중", "리뷰중"] %}
             <section class="border border-gray-200 rounded-lg p-4 space-y-2">
                 <h3 class="font-semibold">AI 제안</h3>
-                <div
-                    class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-red-100 text-red-700 text-sm font-semibold shadow-sm"
-                >
-                    <svg
-                        class="w-4 h-4 text-red-500"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                    >
-                        <path
-                            fill-rule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm-.75-4.75a.75.75 0 001.5 0v-1.5a.75.75 0 00-1.5 0v1.5zM10 7a.75.75 0 01.75.75v2.5a.75.75 0 01-1.5 0v-2.5A.75.75 0 0110 7z"
-                            clip-rule="evenodd"
-                        />
+                <div class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-red-100 text-red-700 text-sm font-semibold shadow-sm">
+                    <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-.75-4.75a.75.75 0 001.5 0v-1.5a.75.75 0 00-1.5 0v1.5zM10 7a.75.75 0 01.75.75v2.5a.75.75 0 01-1.5 0v-2.5A.75.75 0 0110 7z" clip-rule="evenodd"/>
                     </svg>
                     리뷰 중
                 </div>
@@ -103,20 +101,16 @@ content %}
                     <div class="text-gray-800 font-semibold">Code Review</div>
                     <div class="ml-2">
                         <div>
-                            <span class="text-gray-600">Summary:</span> {{
-                            ai.code_review.summary }}
+                            <span class="text-gray-600">Summary:</span> {{ ai.code_review.summary }}
                         </div>
                         <div>
-                            <span class="text-gray-600">Approach:</span> {{
-                            ai.code_review.approach }}
+                            <span class="text-gray-600">Approach:</span> {{ ai.code_review.approach }}
                         </div>
                         <div>
-                            <span class="text-gray-600">Time:</span> {{
-                            ai.code_review.time_complexity }}
+                            <span class="text-gray-600">Time:</span> {{ ai.code_review.time_complexity }}
                         </div>
                         <div>
-                            <span class="text-gray-600">Space:</span> {{
-                            ai.code_review.space_complexity }}
+                            <span class="text-gray-600">Space:</span> {{ ai.code_review.space_complexity }}
                         </div>
 
                         {% if ai.code_review.edge_cases_missing %}
@@ -126,53 +120,48 @@ content %}
                             <li>{{ ec }}</li>
                             {% endfor %}
                         </ul>
-                        {% endif %} {% if ai.code_review.test_cases_suggested %}
-                        <div class="mt-2 text-gray-600">
-                            Test Cases Suggested
-                        </div>
+                        {% endif %}
+                        {% if ai.code_review.test_cases_suggested %}
+                        <div class="mt-2 text-gray-600">Test Cases Suggested</div>
                         <ul class="list-disc pl-5">
                             {% for tc in ai.code_review.test_cases_suggested %}
                             <li class="font-mono text-xs">{{ tc }}</li>
                             {% endfor %}
                         </ul>
-                        {% endif %} {% if ai.code_review.refactoring_suggestions
-                        %}
-                        <div class="mt-2 text-gray-600">
-                            Refactoring Suggestions
-                        </div>
+                        {% endif %}
+                        {% if ai.code_review.refactoring_suggestions %}
+                        <div class="mt-2 text-gray-600">Refactoring Suggestions</div>
                         <ul class="list-disc pl-5">
-                            {% for rf in ai.code_review.refactoring_suggestions
-                            %}
+                            {% for rf in ai.code_review.refactoring_suggestions %}
                             <li>{{ rf }}</li>
                             {% endfor %}
                         </ul>
-                        {% endif %} {% if ai.code_review.code_suggestions %}
+                        {% endif %}
+                        {% if ai.code_review.code_suggestions %}
                         <div class="mt-2 text-gray-600">Code Suggestion</div>
                         <ul class="list-disc pl-5">
-                            {% for suggestion in ai.code_review.code_suggestions
-                            %}
+                            {% for suggestion in ai.code_review.code_suggestions %}
                             <li>{{ suggestion }}</li>
                             {% endfor %}
                         </ul>
                         {% endif %}
                     </div>
                 </div>
-                {% endif %} {# study_plan / uncertainties / confidence 재귀
-                렌더링 #} {% for key in ["study_plan", "uncertainties",
-                "confidence"] %} {% if ai[key] is defined %}
+                {% endif %}
+                {# study_plan / uncertainties / confidence 재귀 렌더링 #}
+                {% for key in ["study_plan", "uncertainties", "confidence"] %}
+                {% if ai[key] is defined %}
                 <div>
-                    <div class="text-gray-800 font-semibold">
-                        {{ key|replace("_"," ")|title }}
-                    </div>
+                    <div class="text-gray-800 font-semibold">{{ key|replace("_"," ")|title }}</div>
                     <div class="ml-2">{{ render_value(ai[key]) }}</div>
                 </div>
-                {% endif %} {% endfor %}
+                {% endif %}
+                {% endfor %}
             </section>
-                        {% endif %}
-                </div>
+            {% endif %}
         </div>
     </div>
-</div>
+              
 <!-- Get the item from the jinja2 as item-data -->
 <script id="item-data" type="application/json">
     {{ item | tojson }}
