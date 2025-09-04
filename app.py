@@ -271,44 +271,44 @@ def get_store_keywords(pid,title_description_approach):
     return pid
 
 
-
-
-
 @celery.task
 def get_store_aisuggestion(pid, post):
 
     # call chatgpt API
-    prompt = f"""You are an expert algorithm problem analyst and senior code reviewer.
+    prompt = f"""
+    You are an expert algorithm problem analyst.
+    Given a problem Title, Description, and an Approach, do the following:
 
-    Your tasks:
-    1) From the given problem title/description, extract only essential keywords needed to solve it, each with a crisp Korean explanation (≤2 sentences).
-    2) Analyze the provided code snippets for approach, complexity, correctness, edge cases, and maintainability.
-    3) Propose what to study next (prioritized), with short justifications and concrete topic names.
-    4) Analyze the given code snippets and criticize and comment what is good and bad and put those into code_suggestions and make a study plan based on it
-    Rules:
-    - Return STRICT, VALID JSON only (no extra text).
-    - All field values (summary, explanation, why, etc.) **must be written in Korean**.
-    - Use this schema:
+
+    1. Provide clear Korean explanations for each keyword (≤2 sentences, practical: 왜 필요한지/언제 쓰는지).
+    2. Based on the given Approach, generate concrete suggestions or warnings, and give me your opinions on the user approach (e.g., is it the right aproach?) and put them in the "advice" array.
+
+    ⚠️ VERY IMPORTANT:
+    - "advice" MUST be ONLY a list of plain strings.
+    - DO NOT include keyword/explanation objects inside advice.
+    - If advice is not a string, your answer is invalid.
+
+    OUTPUT RULES:
+    - Return STRICTLY valid JSON with exactly 4 arrays:
     {{
-      "code_review": {{
-        "summary": "...",
-        "approach": "...",
-        "time_complexity": "예: O(N log N)",
-        "space_complexity": "예: O(N)",
-        "edge_cases_missing": ["..."],
-        "test_cases_suggested": ["입력/출력 예시 ..."],
-        "code_suggestions": ["..."],
-      }},
-      "study_plan": [
-        {{"topic": "...", "why": "...", "what_to_focus": ["...", "..."] }}
-      ]
+      "advice": ["...", "..."]
     }}
+
+    ✅ Correct example:
+    "advice": ["조건문 대신 switch문을 고려해라", "입력이 많으므로 O(n log n) 접근이 필요하다"]
+
+    ❌ Wrong example (DO NOT do this):
+    "advice": [{{"keyword": "조건문", "explanation": "점수 비교에 필요하다"}}]
+
+    - advice must be 2–5 items, short and actionable, each based on the provided Approach.
+    - "advice" MUST be a non-empty list of plain strings (length 2–5).
+    - If advice would be empty, your answer is INVALID — generate best-practice advice inferred from Title/Description.
+    - DO NOT output objects inside "advice".
 
     Title: {post.get("title", "")}
     Description: {post.get("description", "")}
+    Approach: {post.get("approach", "")}
 
-    Code Snippets:
-    {post.get("codeSnippets", "")}
     """
 
     response = openai.chat.completions.create(
@@ -321,7 +321,7 @@ def get_store_aisuggestion(pid, post):
     )
 
     deserialized = json.loads(response.choices[0].message.content)
-    aisuggestion = {'aiSuggestion': deserialized}
+    aisuggestion = {'advice': deserialized['advice']}
     # doc.setdefault("data_structures",parsed['data_structures'])
     # doc.setdefault("algorithms",parsed['algorithms'])
     # doc.setdefault("concepts",parsed['concepts'])
