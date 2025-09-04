@@ -55,111 +55,46 @@ content %}
     <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- 왼쪽 카드: 추가 정보 / 예제 등 -->
         <div class="bg-white border border-gray-200 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-colors">
-            <div class="text-sm text-gray-600 mb-2">아아아</div>
             <div class="text-sm text-gray-700">
-                <!-- 필요하면 여기에 본문 예제나 추가 메타를 넣으세요 -->
+                <h3 class="font-semibold">접근방식</h3>
+                <p>{{ item.approach }}</p></div>
             </div>
-        </div>
-
-        <!-- 오른쪽 카드: AI 피드백 -->
-        <div class="bg-white border border-gray-200 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-colors flex flex-col">
-            <div class="text-sm text-gray-600 mb-4">아아아</div>
-            <!-- AI 피드백 -->
-            {% macro render_value(val) %} {% if val is mapping %}
-            <div class="space-y-2">
-                {% for kk, vv in val.items() %}
-                <div>
-                    <div class="text-gray-600 font-medium">{{ kk }}</div>
-                    <div class="ml-3">{{ render_value(vv) }}</div>
-                </div>
-                {% endfor %}
-            </div>
-            {% elif val is sequence and val is not string %}
-            <ul class="list-disc pl-6 space-y-1">
-                {% for item in val %}
-                <li>{{ render_value(item) }}</li>
-                {% endfor %}
-            </ul>
-            {% else %} {{ val }} {% endif %} {% endmacro %} {# === 여기부터 교체 === #}
-            {% set ai = item.aiSuggestion %} {% if ai is string and ai|trim in ["리뷰 중", "리뷰중"] %}
-            <section class="border border-gray-200 rounded-lg p-4 space-y-2">
-                <h3 class="font-semibold">AI 제안</h3>
-                <div class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-red-100 text-red-700 text-sm font-semibold shadow-sm">
-                    <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-.75-4.75a.75.75 0 001.5 0v-1.5a.75.75 0 00-1.5 0v1.5zM10 7a.75.75 0 01.75.75v2.5a.75.75 0 01-1.5 0v-2.5A.75.75 0 0110 7z" clip-rule="evenodd"/>
+            <div class="bg-white border border-gray-200 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-colors">
+            <div class="text-sm text-gray-700">
+                <h3 class="font-semibold">AI 조언</h3>
+                <!-- <p>{{ item.suggestion }}</p></div> -->
+            {% set ai = item.aiSuggestion %} {% if ai is string and ai|trim in
+            ["리뷰 중", "리뷰중"] %}
+                <div
+                    class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-red-100 text-red-700 text-sm font-semibold shadow-sm"
+                >
+                    <svg
+                        class="w-4 h-4 text-red-500"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                    >
+                        <path
+                            fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm-.75-4.75a.75.75 0 001.5 0v-1.5a.75.75 0 00-1.5 0v1.5zM10 7a.75.75 0 01.75.75v2.5a.75.75 0 01-1.5 0v-2.5A.75.75 0 0110 7z"
+                            clip-rule="evenodd"
+                        />
                     </svg>
                     리뷰 중
                 </div>
-            </section>
+          
 
-            {% elif ai %}
-            <section class="border border-gray-200 rounded-lg p-4 space-y-4">
-                <h3 class="font-semibold">AI 제안</h3>
-
-                {# code_review 블록 (객체일 때만) #} {% if ai.code_review %}
-                <div class="space-y-2">
-                    <div class="text-gray-800 font-semibold">Code Review</div>
-                    <div class="ml-2">
-                        <div>
-                            <span class="text-gray-600">Summary:</span> {{ ai.code_review.summary }}
-                        </div>
-                        <div>
-                            <span class="text-gray-600">Approach:</span> {{ ai.code_review.approach }}
-                        </div>
-                        <div>
-                            <span class="text-gray-600">Time:</span> {{ ai.code_review.time_complexity }}
-                        </div>
-                        <div>
-                            <span class="text-gray-600">Space:</span> {{ ai.code_review.space_complexity }}
-                        </div>
-
-                        {% if ai.code_review.edge_cases_missing %}
-                        <div class="mt-2 text-gray-600">Edge Cases Missing</div>
-                        <ul class="list-disc pl-5">
-                            {% for ec in ai.code_review.edge_cases_missing %}
-                            <li>{{ ec }}</li>
-                            {% endfor %}
-                        </ul>
-                        {% endif %}
-                        {% if ai.code_review.test_cases_suggested %}
-                        <div class="mt-2 text-gray-600">Test Cases Suggested</div>
-                        <ul class="list-disc pl-5">
-                            {% for tc in ai.code_review.test_cases_suggested %}
-                            <li class="font-mono text-xs">{{ tc }}</li>
-                            {% endfor %}
-                        </ul>
-                        {% endif %}
-                        {% if ai.code_review.refactoring_suggestions %}
-                        <div class="mt-2 text-gray-600">Refactoring Suggestions</div>
-                        <ul class="list-disc pl-5">
-                            {% for rf in ai.code_review.refactoring_suggestions %}
-                            <li>{{ rf }}</li>
-                            {% endfor %}
-                        </ul>
-                        {% endif %}
-                        {% if ai.code_review.code_suggestions %}
-                        <div class="mt-2 text-gray-600">Code Suggestion</div>
-                        <ul class="list-disc pl-5">
-                            {% for suggestion in ai.code_review.code_suggestions %}
-                            <li>{{ suggestion }}</li>
-                            {% endfor %}
-                        </ul>
-                        {% endif %}
-                    </div>
-                </div>
-                {% endif %}
-                {# study_plan / uncertainties / confidence 재귀 렌더링 #}
-                {% for key in ["study_plan", "uncertainties", "confidence"] %}
-                {% if ai[key] is defined %}
-                <div>
-                    <div class="text-gray-800 font-semibold">{{ key|replace("_"," ")|title }}</div>
-                    <div class="ml-2">{{ render_value(ai[key]) }}</div>
-                </div>
-                {% endif %}
-                {% endfor %}
-            </section>
+            {% elif ai is sequence and ai is not string %}
+                <ul class="list-disc pl-5 space-y-1">
+                    {% for suggestion in ai %}
+                    <li>{{ suggestion }}</li>
+                    {% endfor %}
+                </ul>
             {% endif %}
+            </div>
+
         </div>
+          
+        </div>          
     </div>
               
 <!-- Get the item from the jinja2 as item-data -->
