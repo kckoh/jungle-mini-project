@@ -210,7 +210,7 @@ def get_store_keywords(title_description_approach):
 
     1. Extract only the essential keywords required to solve it.
     2. Provide clear Korean explanations for each keyword (≤2 sentences, practical: 왜 필요한지/언제 쓰는지).
-    3. Based on the given Approach, generate concrete suggestions or warnings, and put them in the "advice" array.
+    3. Based on the given Approach, generate concrete suggestions or warnings, and give me your opinions on the user approach (e.g., is it the right aproach?) and put them in the "advice" array.
 
     ⚠️ VERY IMPORTANT:
     - "advice" MUST be ONLY a list of plain strings.
@@ -237,6 +237,7 @@ def get_store_keywords(title_description_approach):
     - "advice" MUST be a non-empty list of plain strings (length 2–5).
     - If advice would be empty, your answer is INVALID — generate best-practice advice inferred from Title/Description.
     - DO NOT output objects inside "advice".
+
 
     Title: {title_description_approach.get("title")}
     Description: {title_description_approach.get("description")}
