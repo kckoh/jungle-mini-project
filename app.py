@@ -200,6 +200,7 @@ def add_meta(d):
 
 @celery.task
 def get_store_keywords(title_description_approach):
+
     # save the data to the mongodb
     doc = add_meta(title_description_approach)
 
@@ -254,17 +255,23 @@ def get_store_keywords(title_description_approach):
     )
 
     parsed = json.loads(response.choices[0].message.content)
-    doc.setdefault("data_structures",parsed['data_structures'])
-    doc.setdefault("algorithms",parsed['algorithms'])
-    doc.setdefault("concepts",parsed['concepts'])
-    doc.setdefault("email",title_description_approach['email'])
-    doc.setdefault("user_approach", title_description_approach.get("approach"))
-    doc.setdefault("advice", parsed['advice'])
+#     doc.setdefault("data_structures",parsed['data_structures'])
+#     doc.setdefault("algorithms",parsed['algorithms'])
+#     doc.setdefault("concepts",parsed['concepts'])
 
-    result = posts.insert_one(doc)
+    to_set = {
+    "data_structures": parsed.get("data_structures", []),
+    "algorithms": parsed.get("algorithms", []),
+    "concepts": parsed.get("concepts", []),
+    "advice": parsed.get("advice", []),
+    }
+    posts.update_one({"_id": ObjectId(pid)}, {"$set": to_set})
+    # app.logger.info(f"Inserted Problem ID: {doc['id']}")
+    
+    return pid
 
-    _id = str(result.inserted_id)
-    return _id
+  
+
 
 
 @celery.task
@@ -340,8 +347,15 @@ def create_post():
 
     data['email'] = session.get('email')
 
+    # //mongdb insert
+    doc = add_meta(data)
+    tmp = posts.insert_one(doc)
+    data["_id"] = str(tmp.inserted_id)
+    pid = str(tmp.inserted_id)
+
+
     # celery
-    task = get_store_keywords.delay(data)
+    task = get_store_keywords.delay(pid,data)
 
     return jsonify({"task_id": task.id, "success": True}), 201
 
@@ -372,13 +386,15 @@ def problem_detail(pid):
         item.setdefault('aiSuggestion', result['advice'])
 
     # unpack data_structures, algorithms, concepts
-    data = result['data_structures'] + result['algorithms'] + result['concepts']
+    if 'data_structures' in result:
+        data = result['data_structures'] + result['algorithms'] + result['concepts']
 
-    keyword_solution = {
-        item["keyword"]: item["explanation"]
-        for item in data
-    }
-
+        keyword_solution = {
+            item["keyword"]: item["explanation"]
+            for item in data
+        }
+    else:
+        keyword_solution = {}
     return render_template("problems/problem_detail.html", item=item, keyword_solution=keyword_solution)
 
 @app.route("/problems/new")
