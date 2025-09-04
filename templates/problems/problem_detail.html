@@ -1,8 +1,8 @@
 {% extends 'base.html' %} {% block title %}알고리즘 상세{% endblock %} {% block
 content %}
-<div class="max-w-3xl mx-auto px-4 md:px-6">
+<div class="max-w-5xl mx-auto px-0">
     <!-- 상단 헤더 -->
-    <div class="pt-2 pb-4 md:pt-4 md:pb-6">
+    <div class="pt-2 pb-4 mx-1">
         <div class="flex items-start justify-between gap-3">
             <div>
                 <h1 class="text-xl md:text-2xl font-bold tracking-tight">
@@ -15,282 +15,141 @@ content %}
             <a
                 href="/problems"
                 class="hidden md:inline-flex items-center gap-2 px-3 py-2 rounded-md border border-gray-200 text-sm hover:bg-gray-50"
-                >목록</a
             >
+                목록
+            </a>
         </div>
     </div>
 
-    <!-- 본문 카드 -->
+    <!-- 간단 설명 -->
+    <div class="mt-2 mb-6 mx-1">{{ item.description or '알고리즘 내용' }}</div>
+
+    <!-- 키워드 섹션 -->
     <div class="border border-gray-200 rounded-xl bg-white overflow-hidden">
-        <div
-            class="px-4 md:px-6 py-4 border-b border-gray-200 bg-gradient-to-b from-gray-50 to-white"
-        >
-            <div class="flex flex-wrap items-center gap-2">
-                <div>
-                    {% for k,v in keyword_solution.items() %}
-                    <button
-                        class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full border border-gray-200"
-                        data-value="{{ v }}"
-                        onclick="showKeywordValue(this)"
-                    >
-                        {{ k }}
-                    </button>
-                    {% endfor %}
-                </div>
+        <div class="px-4 md:px-6 py-4 border-b border-gray-200">
+            <div class="flex flex-wrap gap-2">
+                {% for k, v in keyword_solution.items() %}
+                <button
+                    class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full border border-gray-200"
+                    data-value="{{ v }}"
+                    onclick="showKeywordValue(this)"
+                >
+                    {{ k }}
+                </button>
+                {% endfor %}
             </div>
             <div
                 id="keyword-value-display"
-                class="mt-2 text-sm text-gray-600"
+                class="mt-2 text-sm text-gray-600 whitespace-pre-wrap"
             ></div>
         </div>
-        <div class="p-4 md:p-6 space-y-6">
-            <section class="prose max-w-none">
-                {{ item.description or '알고리즘 내용' }}
-            </section>
+    </div>
 
-            <!-- 코드 블록 (있으면) -->
-            <!--<section class="border border-gray-200 rounded-lg bg-gray-50 p-3">
-                <div class="flex items-center justify-between">
-                    <strong class="text-sm">코드</strong>
-                    <button
-                        type="button"
-                        class="text-xs text-gray-500"
-                        onclick="toggleEdit()"
-                    >
-                        ✏️ 수정
-                    </button>
-                </div>-->
+    <!-- 본문 2-컬럼 -->
+    <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- 좌측: 접근방식 (수정/저장 기능 유지) -->
+        <section
+            class="bg-white border border-gray-200 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-colors relative"
+        >
+            <button
+                type="button"
+                id="approach-edit-btn"
+                class="absolute top-3 right-3 inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border border-gray-200 hover:bg-gray-50"
+                onclick="toggleApproachEdit()"
+            >
+                ✏️ 수정
+            </button>
+
+            <h3 class="font-semibold">접근방식</h3>
 
             <!-- 보기 모드 -->
-            <!--<pre
-                    id="code-view"
-                    class="mt-2 overflow-auto text-xs"
-                ><code>{{ item.code }}</code></pre>-->
+            <p id="approach-view" class="pr-16 text-sm text-gray-700 mt-2 mb-2">
+                {{ item.approach }}
+            </p>
 
-            <!-- 수정 모드 (처음엔 hidden) -->
-            <!--<div id="code-edit" class="hidden">
-                    <textarea
-                        id="code-input"
-                        class="mt-2 w-full h-40 rounded-md border border-gray-300 p-2 text-xs font-mono"
-                    ></textarea>
+            <!-- 수정 모드 -->
+            <div id="approach-edit" class="hidden space-y-2">
+                <textarea
+                    id="approach-input"
+                    class="w-full h-32 rounded-md border border-gray-300 p-2 text-sm"
+                >
+{{- item.approach | trim -}}</textarea
+                >
+                <div class="flex gap-2">
                     <button
                         type="button"
-                        class="text-xs text-blue-600 mt-2"
-                        onclick="updateCode()"
+                        class="text-xs text-blue-600"
+                        onclick="saveApproach()"
                     >
                         💾 저장
                     </button>
+                    <button
+                        type="button"
+                        class="text-xs text-gray-500"
+                        onclick="cancelApproachEdit()"
+                    >
+                        취소
+                    </button>
                 </div>
-            </section>-->
-
-            <!-- AI 피드백 -->
-            <!--{% macro render_value(val) %} {% if val is mapping %}
-            <div class="space-y-2">
-                {% for kk, vv in val.items() %}
-                <div>
-                    <div class="text-gray-600 font-medium">{{ kk }}</div>
-                    <div class="ml-3">{{ render_value(vv) }}</div>
-                </div>
-                {% endfor %}
             </div>
-            {% elif val is sequence and val is not string %}
-            <ul class="list-disc pl-6 space-y-1">
-                {% for item in val %}
-                <li>{{ render_value(item) }}</li>
-                {% endfor %}
-            </ul>
-            {% else %} {{ val }} {% endif %} {% endmacro %} {# === 여기부터 교체
-            === #} {% set ai = item.aiSuggestion %} {% if ai is string and
-            ai|trim in ["리뷰 중", "리뷰중"] %}
-            <section class="border border-gray-200 rounded-lg p-4 space-y-2">
-                <h3 class="font-semibold">AI 제안</h3>
-                <div
-                    class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-red-100 text-red-700 text-sm font-semibold shadow-sm"
-                >
-                    <svg
-                        class="w-4 h-4 text-red-500"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                    >
-                        <path
-                            fill-rule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm-.75-4.75a.75.75 0 001.5 0v-1.5a.75.75 0 00-1.5 0v1.5zM10 7a.75.75 0 01.75.75v2.5a.75.75 0 01-1.5 0v-2.5A.75.75 0 0110 7z"
-                            clip-rule="evenodd"
-                        />
-                    </svg>
-                    리뷰 중
-                </div>
-            </section>
+        </section>
 
-            {% elif ai %}
-            <section class="border border-gray-200 rounded-lg p-4 space-y-4">
-                <h3 class="font-semibold">AI 제안</h3>
-
-                {# code_review 블록 (객체일 때만) #} {% if ai.code_review %}
-                <div class="space-y-2">
-                    <div class="text-gray-800 font-semibold">Code Review</div>
-                    <div class="ml-2">
-                        <div>
-                            <span class="text-gray-600">Summary:</span> {{
-                            ai.code_review.summary }}
-                        </div>
-                        <div>
-                            <span class="text-gray-600">Approach:</span> {{
-                            ai.code_review.approach }}
-                        </div>
-                        <div>
-                            <span class="text-gray-600">Time:</span> {{
-                            ai.code_review.time_complexity }}
-                        </div>
-                        <div>
-                            <span class="text-gray-600">Space:</span> {{
-                            ai.code_review.space_complexity }}
-                        </div>
-
-                        {% if ai.code_review.edge_cases_missing %}
-                        <div class="mt-2 text-gray-600">Edge Cases Missing</div>
-                        <ul class="list-disc pl-5">
-                            {% for ec in ai.code_review.edge_cases_missing %}
-                            <li>{{ ec }}</li>
-                            {% endfor %}
-                        </ul>
-                        {% endif %} {% if ai.code_review.test_cases_suggested %}
-                        <div class="mt-2 text-gray-600">
-                            Test Cases Suggested
-                        </div>
-                        <ul class="list-disc pl-5">
-                            {% for tc in ai.code_review.test_cases_suggested %}
-                            <li class="font-mono text-xs">{{ tc }}</li>
-                            {% endfor %}
-                        </ul>
-                        {% endif %} {% if ai.code_review.refactoring_suggestions
-                        %}
-                        <div class="mt-2 text-gray-600">
-                            Refactoring Suggestions
-                        </div>
-                        <ul class="list-disc pl-5">
-                            {% for rf in ai.code_review.refactoring_suggestions
-                            %}
-                            <li>{{ rf }}</li>
-                            {% endfor %}
-                        </ul>
-                        {% endif %} {% if ai.code_review.code_suggestions %}
-                        <div class="mt-2 text-gray-600">Code Suggestion</div>
-                        <ul class="list-disc pl-5">
-                            {% for suggestion in ai.code_review.code_suggestions
-                            %}
-                            <li>{{ suggestion }}</li>
-                            {% endfor %}
-                        </ul>
-                        {% endif %}
-                    </div>
-                </div>
-                {% endif %} {# study_plan / uncertainties / confidence 재귀
-                렌더링 #} {% for key in ["study_plan", "uncertainties",
-                "confidence"] %} {% if ai[key] is defined %}
-                <div>
-                    <div class="text-gray-800 font-semibold">
-                        {{ key|replace("_"," ")|title }}
-                    </div>
-                    <div class="ml-2">{{ render_value(ai[key]) }}</div>
-                </div>
-                {% endif %} {% endfor %}
-            </section>
-            {% endif %}-->
-
-            <section
-                class="border border-gray-200 rounded-lg p-4 space-y-2 relative"
-            >
-                <!-- 오른쪽 위 수정 버튼 -->
-                <button
-                    type="button"
-                    id="approach-edit-btn"
-                    class="absolute top-3 right-3 inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border border-gray-200 hover:bg-gray-50"
-                    onclick="toggleApproachEdit()"
-                >
-                    ✏️ 수정
-                </button>
-
-                <h3 class="font-semibold">접근방식</h3>
-
-                <!-- 보기 모드 -->
-                <p id="approach-view" class="pr-16">{{ item.approach }}</p>
-
-                <!-- 수정 모드 (처음엔 hidden) -->
-                <div id="approach-edit" class="hidden space-y-2">
-                    <textarea
-                        id="approach-input"
-                        class="w-full h-32 rounded-md border border-gray-300 p-2 text-sm"
-                    >
-{{ item.approach }}</textarea
-                    >
-                    <div class="flex gap-2">
-                        <button
-                            type="button"
-                            class="text-xs text-blue-600"
-                            onclick="saveApproach()"
-                        >
-                            💾 저장
-                        </button>
-                        <button
-                            type="button"
-                            class="text-xs text-gray-500"
-                            onclick="cancelApproachEdit()"
-                        >
-                            취소
-                        </button>
-                    </div>
-                </div>
-            </section>
-
+        <!-- 우측: AI 조언 -->
+        <section
+            class="bg-white border border-gray-200 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-colors"
+        >
+            <h3 class="font-semibold">AI 조언</h3>
             {% set ai = item.aiSuggestion %} {% if ai is string and ai|trim in
             ["리뷰 중", "리뷰중"] %}
-            <section class="border border-gray-200 rounded-lg p-4 space-y-2">
-                <h3 class="font-semibold">AI 조언</h3>
-                <div
-                    class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-red-100 text-red-700 text-sm font-semibold shadow-sm"
+            <div
+                class="mt-2 inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-red-100 text-red-700 text-sm font-semibold shadow-sm"
+            >
+                <svg
+                    class="w-4 h-4 text-red-500"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
                 >
-                    <svg
-                        class="w-4 h-4 text-red-500"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                    >
-                        <path
-                            fill-rule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm-.75-4.75a.75.75 0 001.5 0v-1.5a.75.75 0 00-1.5 0v1.5zM10 7a.75.75 0 01.75.75v2.5a.75.75 0 01-1.5 0v-2.5A.75.75 0 0110 7z"
-                            clip-rule="evenodd"
-                        />
-                    </svg>
-                    리뷰 중
-                </div>
-            </section>
-
+                    <path
+                        fill-rule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm-.75-4.75a.75.75 0 001.5 0v-1.5a.75.75 0 00-1.5 0v1.5zM10 7a.75.75 0 01.75.75v2.5a.75.75 0 01-1.5 0v-2.5A.75.75 0 0110 7z"
+                        clip-rule="evenodd"
+                    />
+                </svg>
+                리뷰 중
+            </div>
             {% elif ai is sequence and ai is not string %}
-            <section class="border border-gray-200 rounded-lg p-4 space-y-2">
-                <h3 class="font-semibold">AI 조언</h3>
-                <ul class="list-disc pl-5 space-y-1">
-                    {% for suggestion in ai %}
-                    <li>{{ suggestion }}</li>
-                    {% endfor %}
-                </ul>
-            </section>
+            <ul class="mt-2 list-disc pl-5 space-y-1 text-sm text-gray-700">
+                {% for suggestion in ai %}
+                <li>{{ suggestion }}</li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="mt-2 text-sm text-gray-500">AI 조언이 아직 없습니다.</p>
             {% endif %}
-        </div>
+        </section>
     </div>
 </div>
-<!-- Get the item from the jinja2 as item-data -->
+
+<!-- Jinja 데이터 주입 -->
 <script id="item-data" type="application/json">
     {{ item | tojson }}
 </script>
-<script>
-    // 현재 선택된 태그를 기억
-    let currentEl = null;
 
+<script>
+    // 키워드 표시 토글
+    let currentEl = null;
     function showKeywordValue(el) {
         const display = document.getElementById("keyword-value-display");
-        const value = el.getAttribute("data-value");
+        const raw = el.getAttribute("data-value");
+        let value = raw;
 
-        // 같은 태그를 다시 누르면 토글(숨김)
+        // JSON으로 직렬화된 문자열일 수 있으므로 한번 파싱 시도
+        try {
+            value = JSON.parse(raw);
+        } catch (_) {
+            // 파싱 실패 시 그대로 사용
+        }
+
         if (currentEl === el) {
             display.textContent = "";
             el.classList.remove("bg-gray-100", "border-gray-300");
@@ -298,69 +157,30 @@ content %}
             return;
         }
 
-        // 다른 태그를 누르면 값 교체
         if (currentEl) {
-            // 현재 EL 안보이게하기
             currentEl.classList.remove("bg-gray-100", "border-gray-300");
         }
         el.classList.add("bg-gray-100", "border-gray-300");
 
-        // 문자열/객체 모두 보기 좋게 출력
         display.textContent =
             typeof value === "string" ? value : JSON.stringify(value, null, 2);
 
         currentEl = el;
     }
-    function toggleEdit() {
-        // 현재 코드 가져오기
-        const codeView = document.getElementById("code-view");
-        const codeEdit = document.getElementById("code-edit");
-        const textarea = document.getElementById("code-input");
 
-        // 코드 내용을 textarea에 복사
-        textarea.value = codeView.innerText.trim();
-
-        // 토글: 보기 숨기고, 수정 보이기
-        codeView.style.display = "none";
-        codeEdit.classList.remove("hidden");
-    }
-
-    async function updateCode() {
-        // don't change the name of the variable!!
-        const codeSnippets = document.getElementById("code-input").value;
-        const item = JSON.parse(
-            document.getElementById("item-data").textContent,
-        );
-        const response = await fetch(`/api/posts/${item.id}`, {
-            method: "PATCH",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ codeSnippets, aiSuggestion: "리뷰 중" }),
-        });
-
-        if (response.ok) {
-            alert("코드가 업데이트되었습니다!");
-            location.reload();
-        } else {
-            alert("업데이트 실패");
-        }
-    }
-</script>
-
-<script>
+    // 접근방식 편집 토글
     function toggleApproachEdit() {
         document.getElementById("approach-view").classList.add("hidden");
         document.getElementById("approach-edit").classList.remove("hidden");
         document.getElementById("approach-edit-btn").classList.add("hidden");
     }
-
     function cancelApproachEdit() {
         document.getElementById("approach-view").classList.remove("hidden");
         document.getElementById("approach-edit").classList.add("hidden");
         document.getElementById("approach-edit-btn").classList.remove("hidden");
     }
 
+    // 접근방식 저장(PATCH)
     async function saveApproach() {
         const newApproach = document
             .getElementById("approach-input")
@@ -378,6 +198,7 @@ content %}
         if (res.ok) {
             document.getElementById("approach-view").textContent = newApproach;
             cancelApproachEdit();
+            alert("업데이트 성공");
         } else {
             alert("업데이트 실패");
         }
